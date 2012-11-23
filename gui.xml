@@ -23,7 +23,7 @@
 					textHAlign="center" textVAlign="center" />
 				<text id="text6" style="nifty-label" backgroundColor="#ff2f"
 					text="TextHAlign: right, TextVAlign: center" color="#000f"
-					textHAlign="right" textVAlign="center">
+					textHAlign="right" textVAlign="center" visibleToMouse="true">
 					<interact onClick="gsom()"/>
 				</text>
 			</panel>
