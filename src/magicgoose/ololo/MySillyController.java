@@ -8,7 +8,6 @@ public class MySillyController implements ScreenController {
 	@Override
 	public void bind(Nifty nifty, Screen screen) {
 		// TODO Auto-generated method stub
-		nifty.exit();
 	}
 
 	@Override
@@ -21,6 +20,7 @@ public class MySillyController implements ScreenController {
 		// TODO Auto-generated method stub		
 	}
 	public void execute(String value) {
-		
+		System.out.println(value);
+		System.exit(0);
 	}
 }
