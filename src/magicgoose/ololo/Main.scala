@@ -28,6 +28,9 @@ object Main {
 		Display.setVSyncEnabled(true)
 		Display.create()
 
+//		print("created display: ")
+//		println(desired_mode)
+
 		val (width, height) = (Display.getWidth(), Display.getHeight())
 
 		val inputSystem = new LwjglInputSystem()
@@ -39,31 +42,7 @@ object Main {
 			inputSystem,
 			new LWJGLTimeProvider())
 
-		print("created display: ")
-		println(desired_mode)
-		nifty.fromXml("gui.xml", "start", new ScreenController {
-			/**
-			 * Bind this ScreenController to a screen. This happens
-			 * right before the onStartScreen STARTED and only exactly once for a screen!
-			 * @param nifty nifty
-			 * @param screen screen
-			 */
-			def bind (nifty: Nifty, screen: Screen) {}
-
-			/**
-			 * called right after the onStartScreen event ENDED.
-			 */
-			def onStartScreen() {}
-
-			/**
-			 * called right after the onEndScreen event ENDED.
-			 */
-			def onEndScreen() {}
-			
-			def gsom() {
-				System.exit(0)
-			}
-		})
+		nifty.fromXml("gui.xml", "start", new MySillyController())
 
 		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
 			nifty.update()
