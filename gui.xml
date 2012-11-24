@@ -3,28 +3,19 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://nifty-gui.sourceforge.net/nifty-1.3.xsd http://nifty-gui.sourceforge.net/nifty-1.3.xsd">
 	<useStyles filename="nifty-default-styles.xml" />
-	<screen id="start" controller="magicgoose.ololo.MySillyController">
+	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
 
 		<layer id="settings" childLayout="center">
 			<panel id="settings_panel" childLayout="vertical" align="right"
 				valign="top" backgroundColor="#fffa" padding="20px">
 
-				<text id="text2" style="nifty-label" backgroundColor="#f80f"
-					text="TextHAlign: center, TextVAlign: center" color="#000f"
-					textHAlign="center" textVAlign="center" />
-				<text id="text3" style="nifty-label" backgroundColor="#fa0f"
-					text="TextHAlign: center, TextVAlign: bottom" color="#000f"
-					textHAlign="center" textVAlign="bottom" />
-				<text id="text4" style="nifty-label" backgroundColor="#fc0f"
-					text="TextHAlign: left, TextVAlign: center" color="#000f"
-					textHAlign="left" textVAlign="center" />
-				<text id="text5" style="nifty-label" backgroundColor="#fe0f"
-					text="TextHAlign: center, TextVAlign: center" color="#000f"
-					textHAlign="center" textVAlign="center" />
-				<text id="text6" style="nifty-label" backgroundColor="#ff2f"
-					text="TextHAlign: right, TextVAlign: center" color="#000f"
-					textHAlign="right" textVAlign="center" visibleToMouse="true">
-					<interact onClick="execute(text6)"/>
+				<text id="text1" style="nifty-label" backgroundColor="#fe0f"
+					text="text1" color="#000f">
+					<interact onClick="click(text1)" />
+				</text>
+				<text id="text2" style="nifty-label" backgroundColor="#ff2f"
+					text="text2, i can be clicked" color="#000f">
+					<interact onClick="click(text2)" />
 				</text>
 			</panel>
 		</layer>

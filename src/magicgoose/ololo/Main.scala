@@ -15,10 +15,17 @@ import de.lessvoid.nifty.builder.PanelBuilder
 import org.lwjgl.input.Keyboard
 import de.lessvoid.nifty.screen.ScreenController
 import de.lessvoid.nifty.screen.Screen
+import java.util.logging.Logger
+import java.util.logging.Level
 
 object Main {
-
+	def main(args: Array[String]) {
+		launch_display()
+	}
+	
 	def launch_display() {
+		Logger.getLogger("de.lessvoid").setLevel(Level.WARNING) //otherwise Nifty-gui spams too much extra messages
+
 		val desired_mode = Display.getAvailableDisplayModes().iterator
 			.filter(d => d.isFullscreenCapable() && d.getBitsPerPixel() >= 32) //we want fullscreen and true color modes only
 			.maxBy(d => d.getWidth() * d.getHeight()) //pick up max resolution
@@ -28,8 +35,8 @@ object Main {
 		Display.setVSyncEnabled(true)
 		Display.create()
 
-//		print("created display: ")
-//		println(desired_mode)
+		//		print("created display: ")
+		//		println(desired_mode)
 
 		val (width, height) = (Display.getWidth(), Display.getHeight())
 
@@ -42,7 +49,11 @@ object Main {
 			inputSystem,
 			new LWJGLTimeProvider())
 
-		nifty.fromXml("gui.xml", "start", new MySillyController())
+		nifty.fromXml("gui.xml", "main", MainScreenController)
+		MainScreenController.actions_click += ("text2", () => {
+			println("huge success!")
+			System.exit(0)
+		})
 
 		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
 			nifty.update()
@@ -56,14 +67,10 @@ object Main {
 	def display(width: Int, height: Int, gui: Nifty) {
 		glClearColor(0f, 1f, 0f, 0f)
 		glClear(GL_COLOR_BUFFER_BIT)
+		//TODO: 3d part
 
 		display_ready2d(width, height)
 		gui.render(false)
 		Display.update()
 	}
-
-	def main(args: Array[String]) {
-		launch_display()
-	}
-
 }
