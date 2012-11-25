@@ -1,22 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<nifty xmlns="http://nifty-gui.sourceforge.net/nifty-1.3.xsd"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<nifty xmlns="http://nifty-gui.sourceforge.net/nifty-1.3.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://nifty-gui.sourceforge.net/nifty-1.3.xsd http://nifty-gui.sourceforge.net/nifty-1.3.xsd">
 	<useStyles filename="nifty-default-styles.xml" />
+	<useControls filename="nifty-default-controls.xml" />
+
 	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
 
-		<layer id="settings" childLayout="center">
-			<panel id="settings_panel" childLayout="vertical" align="right"
-				valign="top" backgroundColor="#fffa" padding="20px">
-
-				<text id="text1" style="nifty-label" backgroundColor="#fe0f"
-					text="text1" color="#000f">
-					<interact onClick="click(text1)" />
-				</text>
-				<text id="text2" style="nifty-label" backgroundColor="#ff2f"
-					text="text2, i can be clicked" color="#000f">
-					<interact onClick="click(text2)" />
-				</text>
+		<layer id="settings" childLayout="vertical" align="right">
+			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" backgroundColor="#fffa" padding="20px" width="25%">
+				<control name="textfield" id="text1" text="type something here"/>
+				
+				<control name="button" id="button_exit" label="Click me">
+					<interact onClick="click(button_exit)" />
+				</control>
 			</panel>
 		</layer>
 	</screen>

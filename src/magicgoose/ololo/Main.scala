@@ -17,6 +17,7 @@ import de.lessvoid.nifty.screen.ScreenController
 import de.lessvoid.nifty.screen.Screen
 import java.util.logging.Logger
 import java.util.logging.Level
+import de.lessvoid.nifty.controls.TextField
 
 object Main {
 	def main(args: Array[String]) {
@@ -50,10 +51,11 @@ object Main {
 			new LWJGLTimeProvider())
 
 		nifty.fromXml("gui.xml", "main", MainScreenController)
-		MainScreenController.actions_click += ("text2", () => {
-			println("huge success!")
+		MainScreenController.actions_click += (("button_exit", () => {
+			val text1 = nifty.getScreen("main").findNiftyControl("text1", classOf[TextField])
+			println(text1.getRealText())
 			System.exit(0)
-		})
+		}))
 
 		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
 			nifty.update()
@@ -65,7 +67,7 @@ object Main {
 	}
 
 	def display(width: Int, height: Int, gui: Nifty) {
-		glClearColor(0f, 1f, 0f, 0f)
+		glClearColor(0f, 0f, 0f, 0f)
 		glClear(GL_COLOR_BUFFER_BIT)
 		//TODO: 3d part
 
