@@ -18,12 +18,13 @@ import de.lessvoid.nifty.screen.Screen
 import java.util.logging.Logger
 import java.util.logging.Level
 import de.lessvoid.nifty.controls.TextField
+import de.lessvoid.nifty.controls.DropDown
 
 object Main {
 	def main(args: Array[String]) {
 		launch_display()
 	}
-	
+
 	def launch_display() {
 		Logger.getLogger("de.lessvoid").setLevel(Level.WARNING) //otherwise Nifty-gui spams too much extra messages
 
@@ -50,10 +51,17 @@ object Main {
 			inputSystem,
 			new LWJGLTimeProvider())
 
+		//GUI setup
 		nifty.fromXml("gui.xml", "main", MainScreenController)
+
+		val geom_types = IndexedSeq("Cuboid", "Tetrahedron", "Ellipsoid")
+		val dropdown_geom_type = nifty.getScreen("main").findNiftyControl("geom_type", classOf[DropDown[String]])
+		for (t <- geom_types)
+			dropdown_geom_type.addItem(t)
+
 		MainScreenController.actions_click += (("button_exit", () => {
-			val text1 = nifty.getScreen("main").findNiftyControl("text1", classOf[TextField])
-			println(text1.getRealText())
+			//val text1 = nifty.getScreen("main").findNiftyControl("tf_dist", classOf[TextField])
+			println((dropdown_geom_type.getSelectedIndex, dropdown_geom_type.getSelection))
 			System.exit(0)
 		}))
 

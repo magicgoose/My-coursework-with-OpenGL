@@ -4,12 +4,30 @@
 	<useStyles filename="nifty-default-styles.xml" />
 	<useControls filename="nifty-default-controls.xml" />
 
+	<!-- this style is needed for the updateScrollpanelPositionToDisplayElement stuff -->
+	<style id="my-listbox-item-style" base="nifty-listbox-item">
+		<effect>
+			<onCustom name="updateScrollpanelPositionToDisplayElement" target="listBoxStatic" oneShot="true" />
+		</effect>
+	</style>
 	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
 
 		<layer id="settings" childLayout="vertical" align="right">
 			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" backgroundColor="#fffa" padding="20px" width="25%">
-				<control name="textfield" id="text1" text="type something here"/>
-				
+				<panel id="s0" childLayout="horizontal">
+					<control name="label" id="l0" text="Geometry type:" align="left" width="50%"></control>
+					<control name="dropDown" id="geom_type" align="right" />
+				</panel>
+				<panel id="s1" childLayout="horizontal">
+					<control name="label" id="l1" text="Distance:" align="left" width="50%"></control>
+					<control name="textfield" id="tf_dist" text="1" align="right" />
+				</panel>
+				<panel id="s2" childLayout="horizontal">
+					<control name="label" id="l2" text="Rotating speed:" align="left" width="50%"></control>
+					<control name="textfield" id="tf_rotate" text="0" align="right" />
+				</panel>
+
+
 				<control name="button" id="button_exit" label="Click me">
 					<interact onClick="click(button_exit)" />
 				</control>
