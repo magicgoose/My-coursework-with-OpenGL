@@ -16,14 +16,5 @@ package object ololo {
 //		val values = fields.map(_.get(obj))
 //		(fields.map(_.getName())) zip values
 //	}
-	def display_ready2d(width: Int, height: Int) {
-		glMatrixMode(GL_PROJECTION)
-		glLoadIdentity()
-		gluOrtho2D(0.0f, width, height, 0.0f)
 
-		glMatrixMode(GL_MODELVIEW)
-		glLoadIdentity()
-		//glTranslatef(0.375f, 0.375f, 0.0f)
-		glDisable(GL_DEPTH_TEST)
-	}
 }

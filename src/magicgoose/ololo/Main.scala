@@ -25,6 +25,37 @@ object Main {
 		launch_display()
 	}
 
+	private def display_ready3d(fov: Float, aspect: Float) {
+		glClearColor(0f, 0f, 0f, 0f)
+		glClear(GL_COLOR_BUFFER_BIT)
+		
+		glEnable(GL_DEPTH_TEST)
+
+		glMatrixMode(GL_PROJECTION)
+		gluPerspective(fov, aspect, 0.01f, 100.0f)
+		glMatrixMode(GL_MODELVIEW)
+		glLoadIdentity()
+	}
+
+	private def display_ready2d(width: Int, height: Int) {
+		
+		glMatrixMode(GL_PROJECTION)
+		glLoadIdentity()
+		gluOrtho2D(0.0f, width, height, 0.0f)
+		glMatrixMode(GL_MODELVIEW)
+		glDisable(GL_DEPTH_TEST)
+	}
+
+	private def draw_something() {
+		glTranslatef(0, 0, -20)
+		//glColor3f(1, 1, 1)
+		glBegin(GL_TRIANGLES)
+			glVertex3f(0.0f, 1.0f, 0.0f)
+			glVertex3f(-1.0f, -1.0f, 0.0f)
+			glVertex3f(1.0f, -1.0f, 0.0f)
+		glEnd()
+	}
+
 	def launch_display() {
 		Logger.getLogger("de.lessvoid").setLevel(Level.WARNING) //otherwise Nifty-gui spams too much extra messages
 
@@ -41,6 +72,7 @@ object Main {
 		//		println(desired_mode)
 
 		val (width, height) = (Display.getWidth(), Display.getHeight())
+		val AR = width.toFloat / height
 
 		val inputSystem = new LwjglInputSystem()
 		inputSystem.startup()
@@ -67,20 +99,21 @@ object Main {
 
 		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
 			nifty.update()
-			display(width, height, nifty)
+			display(width, height, AR, nifty)
 
 		}
 
 		Display.destroy()
 	}
 
-	def display(width: Int, height: Int, gui: Nifty) {
-		glClearColor(0f, 0f, 0f, 0f)
-		glClear(GL_COLOR_BUFFER_BIT)
-		//TODO: 3d part
+	def display(width: Int, height: Int, AR: Float, gui: Nifty) {
+		display_ready3d(90, AR)
+		
+		//draw_something()
 
 		display_ready2d(width, height)
 		gui.render(false)
+		glFlush()
 		Display.update()
 	}
 }
