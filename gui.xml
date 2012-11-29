@@ -12,7 +12,7 @@
 	</style>
 	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
 
-		<layer id="settings" childLayout="vertical" align="right">
+		<layer id="settings" childLayout="vertical" align="right" backgroundColor="#0000">
 			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" style="nifty-panel" padding="20px" width="25%">
 				<panel id="s0" childLayout="horizontal">
 					<control name="label" id="l0" text="Geometry type:" align="left" width="50%"></control>

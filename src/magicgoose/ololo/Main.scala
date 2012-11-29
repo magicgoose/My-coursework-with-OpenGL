@@ -77,13 +77,14 @@ object Main {
 	private def display_ready3d(fov: Float, aspect: Float) {
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		gluPerspective(fov, aspect, 0.01f, 100.0f)
+		gluPerspective(fov, aspect, 0.1f, 100.0f)
 		
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
 		glEnable(GL_DEPTH_TEST)
-		glEnable(GL_LIGHTING)
+		//glEnable(GL_LIGHTING)
+		
 	}
 
 	private def display_ready2d(width: Int, height: Int) {
@@ -98,17 +99,23 @@ object Main {
 		glDisable(GL_LIGHTING)
 	}
 
-	private def draw_something() {
-		glTranslatef(0, 0, -20)
-		//glColor3f(1, 1, 1)
+	private def draw_something(rotation: Float) {
+		glTranslatef(0, 0, -10)
+		glRotatef(rotation, 1, -1, 0)
 
+		
+		glEnable(GL_LINE_SMOOTH)
+		glEnable(GL_POLYGON_SMOOTH)
 		glBegin(GL_TRIANGLES)
 		glVertex3f(0.0f, 1.0f, 0.0f)
+		glColor3f(1, 1, 0)
 		glVertex3f(-1.0f, -1.0f, 0.0f)
+		glColor3f(0, 1, 1)
 		glVertex3f(1.0f, -1.0f, 0.0f)
+		glColor3f(1, 0, 1)
 		glEnd()
 	}
-
+	private var a = 0f
 	def display(width: Int, height: Int, AR: Float, gui: Nifty) {
 		glViewport(0, 0, width, height)
 		glClearDepth(1)
@@ -116,12 +123,14 @@ object Main {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 		display_ready3d(90, AR)
-		draw_something()
+		draw_something(a)
+		a += 0.1f
+		a %= 360
 
 		display_ready2d(width, height)
 		gui.render(false)
-
 		glFlush()
+		
 		Display.update()
 	}
 }
