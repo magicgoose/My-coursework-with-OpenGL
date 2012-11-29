@@ -34,7 +34,7 @@ object Main {
 
 		Display.setDisplayMode(desired_mode)
 		Display.setFullscreen(true)
-		Display.setVSyncEnabled(true)
+		//Display.setVSyncEnabled(true)
 		Display.create()
 
 		//		print("created display: ")
@@ -61,13 +61,10 @@ object Main {
 			dropdown_geom_type.addItem(t)
 
 		MainScreenController.actions_click += (("button_exit", () => {
-			//val text1 = nifty.getScreen("main").findNiftyControl("tf_dist", classOf[TextField])
-			println((dropdown_geom_type.getSelectedIndex, dropdown_geom_type.getSelection))
 			System.exit(0)
 		}))
 
 		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
-			nifty.update()
 			display(width, height, AR, nifty)
 		}
 
@@ -90,7 +87,7 @@ object Main {
 	private def display_ready2d(width: Int, height: Int) {
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		gluOrtho2D(0.0f, width, height, 0.0f)
+		glOrtho(0, width, height, 0, 0, 1)
 
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
@@ -102,8 +99,7 @@ object Main {
 	private def draw_something(rotation: Float) {
 		glTranslatef(0, 0, -10)
 		glRotatef(rotation, 1, -1, 0)
-
-		
+	
 		glEnable(GL_LINE_SMOOTH)
 		glEnable(GL_POLYGON_SMOOTH)
 		glBegin(GL_TRIANGLES)
