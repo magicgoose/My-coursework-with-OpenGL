@@ -34,7 +34,7 @@ object Main {
 
 		Display.setDisplayMode(desired_mode)
 		Display.setFullscreen(true)
-		//Display.setVSyncEnabled(true)
+		Display.setVSyncEnabled(true)
 		Display.create()
 
 		//		print("created display: ")
@@ -64,6 +64,7 @@ object Main {
 			System.exit(0)
 		}))
 
+		//we will spin here right round till the end...
 		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
 			display(width, height, AR, nifty)
 		}
@@ -75,13 +76,12 @@ object Main {
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 		gluPerspective(fov, aspect, 0.1f, 100.0f)
-		
+
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 
 		glEnable(GL_DEPTH_TEST)
-		//glEnable(GL_LIGHTING)
-		
+		glDisable(GL_TEXTURE_2D) //without it, non-textured geometry fails to render correctly		
 	}
 
 	private def display_ready2d(width: Int, height: Int) {
@@ -97,21 +97,22 @@ object Main {
 	}
 
 	private def draw_something(rotation: Float) {
-		glTranslatef(0, 0, -10)
-		glRotatef(rotation, 1, -1, 0)
-	
 		glEnable(GL_LINE_SMOOTH)
 		glEnable(GL_POLYGON_SMOOTH)
+
+		glTranslatef(0, 0, -3)
+		glRotatef(rotation, 0, 1, 0)
+
 		glBegin(GL_TRIANGLES)
-		glVertex3f(0.0f, 1.0f, 0.0f)
 		glColor3f(1, 1, 0)
-		glVertex3f(-1.0f, -1.0f, 0.0f)
+		glVertex3f(0.0f, 1.0f, 0.0f)
 		glColor3f(0, 1, 1)
-		glVertex3f(1.0f, -1.0f, 0.0f)
+		glVertex3f(-1.0f, -1.0f, 0.0f)
 		glColor3f(1, 0, 1)
+		glVertex3f(1.0f, -1.0f, 0.0f)
 		glEnd()
 	}
-	private var a = 0f
+	private var a = 0f //current rotation
 	def display(width: Int, height: Int, AR: Float, gui: Nifty) {
 		glViewport(0, 0, width, height)
 		glClearDepth(1)
@@ -120,13 +121,13 @@ object Main {
 
 		display_ready3d(90, AR)
 		draw_something(a)
-		a += 0.1f
+		a += 0.5f
 		a %= 360
 
 		display_ready2d(width, height)
 		gui.render(false)
 		glFlush()
-		
+
 		Display.update()
 	}
 }
