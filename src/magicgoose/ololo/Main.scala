@@ -36,24 +36,27 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL20
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
+import org.lwjgl.Sys
+import org.lwjgl.util.jinput.LWJGLMouse
+import org.lwjgl.input.Mouse
 
 object Main {
 	def main(args: Array[String]) {
 		launch_display()
 	}
 	
+	var r_geom = Option.empty[GLDrawable] //current figure, ready to draw
+	
 	def launch_display() {
 		Logger.getLogger("de.lessvoid").setLevel(Level.WARNING) //otherwise Nifty-gui spams too much extra messages
-
+		
 		val desired_mode = Display.getAvailableDisplayModes().iterator
 			.filter(d => d.isFullscreenCapable() && d.getBitsPerPixel() >= 32) //we want fullscreen and true color modes only
 			.maxBy(d => d.getWidth() * d.getHeight()) //pick up max resolution
-
 		Display.setDisplayMode(desired_mode)
 		Display.setFullscreen(true)
 		Display.setVSyncEnabled(true)
 		Display.create()
-
 		//		print("created display: ")
 		//		println(desired_mode)
 
@@ -80,13 +83,18 @@ object Main {
 		MainScreenController.actions_click += (("button_exit", () => {
 			nifty.exit()
 		}))
-		
-		//glo_cube
-		//we will spin here right round till the end...
-		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
-			display(width, height, AR, nifty)
-		}
 
+		r_geom = Some(glxLoadPolyhedron(PredefinedShapes.cube))
+		
+		val starttime = Sys.getTime()
+		var endtime = 0L
+		var drawn_frames = 0L
+		while (!(Display.isCloseRequested() || nifty.update()) /*&& (drawn_frames < 4000)*/) { //quit if nifty.update() returns true
+			display(width, height, AR, nifty)
+			drawn_frames += 1
+			endtime = Sys.getTime()
+		}
+		println("Average FPS = " + (drawn_frames * Sys.getTimerResolution().toDouble / (endtime - starttime)))
 		Display.destroy()
 	}
 
@@ -101,12 +109,8 @@ object Main {
 		//glEnable(GL_DEPTH_TEST)
 		glEnable(GL_CULL_FACE)
 		glDisable(GL_TEXTURE_2D) //without it, non-textured geometry fails to render correctly
-		
-		gluLookAt(
-			0.0f, 0.0f, 10.0f, //eye position
-			0.0f, 0.0f, 0.0f, //target position
-			0.0f, 1.0f, 0.0f  //up
-			)
+		glEnable(GL_LINE_SMOOTH)
+		glEnable(GL_POLYGON_SMOOTH)
 	}
 
 	private def display_ready2d(width: Int, height: Int) {
@@ -122,33 +126,37 @@ object Main {
 		glDisable(GL_CULL_FACE)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 	}
+
+	var rotation = Quaternion.unit
 	
-	lazy val glo_cube = glxLoadPolyhedron(PredefinedShapes.cube)
+	private def draw_3d() {
+		gluLookAt(
+			0.0f, 0.0f, -8.0f, //eye position
+			0.0f, 0.0f, 0.0f, //target position
+			0.0f, 1.0f, 0.0f //up
+			)
 
-	private def draw_3d(rotation: Float) {
-		glEnable(GL_LINE_SMOOTH)
-		glEnable(GL_POLYGON_SMOOTH)
+		glMultMatrix(rotation.rotationMatrix)
 
-		//glPushMatrix()
-		val sc = (math.exp(2 + math.sin(rotation / 20)) / 6).toFloat
-		glScalef(sc, sc, sc)
-		glRotatef(rotation, 0, 1, 0)
-		glRotatef(rotation * 1.4f, 1, 0, 0)
-		glRotatef(rotation * 1.23f, 0, 0, 1)
-
-		glColor3f(1, 1, 1)
-		glo_cube()
+		r_geom.foreach(_.draw())
 	}
-	private var a = 0f //current rotation
+	
 	def display(width: Int, height: Int, AR: Float, gui: Nifty) {
 		glViewport(0, 0, width, height)
 		glClearDepth(1)
 		glClearColor(0, 0, 0, 1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-		display_ready3d(90, AR)
-		draw_3d(a)
-		a += 0.3f
+		val (rx, ry) =
+			if (Mouse.isButtonDown(0))
+				(1 - Mouse.getDX, -Mouse.getDY)
+			else
+				(1, 0)
+		
+		rotation *= Quaternion.fromXYrotation(rx.toFloat / 400, ry.toFloat / 400)
+
+		display_ready3d(60, AR)
+		draw_3d()
 
 		display_ready2d(width, height)
 		gui.render(false)

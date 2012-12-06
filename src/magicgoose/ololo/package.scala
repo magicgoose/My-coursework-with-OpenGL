@@ -23,19 +23,18 @@ import java.nio.ByteBuffer
 import java.nio.ShortBuffer
 
 package object ololo {
-	val SIZEOF_FLOAT = java.lang.Float.SIZE / java.lang.Byte.SIZE
-	val SIZEOF_INT = java.lang.Integer.SIZE / java.lang.Byte.SIZE
-	val SIZEOF_VEC4 = 4 * SIZEOF_FLOAT
-	type Polyhedron = (Array[Float], Array[Array[Byte]])
+//	val SIZEOF_FLOAT = java.lang.Float.SIZE / java.lang.Byte.SIZE
+//	val SIZEOF_INT = java.lang.Integer.SIZE / java.lang.Byte.SIZE
+//	val SIZEOF_VEC4 = 4 * SIZEOF_FLOAT
 	
-	def createBuffer(x: Array[Float]) = {//Initializes new Buffer with Array
+	def createBufferF(x: Array[Float]) = {//Initializes new Buffer with Array
 		val vb_data = BufferUtils.createFloatBuffer(x.length)
 		vb_data.put(x)
 		vb_data.rewind()
 		vb_data
 	}
-	def createBuffer(x: Array[Byte]) = {//Initializes new Buffer with Array
-		val vb_data = BufferUtils.createByteBuffer(x.length)
+	def createBufferS(x: Array[Short]) = {//Initializes new Buffer with Array
+		val vb_data = BufferUtils.createShortBuffer(x.length)
 		vb_data.put(x)
 		vb_data.rewind()
 		vb_data
@@ -52,24 +51,20 @@ package object ololo {
 		glBindBuffer(GL_ARRAY_BUFFER, id)
 		glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW)
 	}
-//	private def glxTransferDataElementArray(id: Int, buffer: IntBuffer) {
-//		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id)
-//		glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer, GL_STATIC_DRAW)
-//	}
-	private def glxTransferDataElementArray(id: Int, buffer: ByteBuffer) {
+	private def glxTransferDataElementArray(id: Int, buffer: ShortBuffer) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer, GL_STATIC_DRAW)
 	}
 	def glxLoadArray(g: Array[Float]) = { //Loads array to GPU, returns its ID
 		val id = glxCreateBufferID()
-		val data = createBuffer(g)
+		val data = createBufferF(g)
 		glxTransferDataArray(id, data)
 		id
 	}
-	def glxLoadElementArrays(g: Array[Array[Byte]]) = { //Loads array to GPU, returns its ID
+	def glxLoadElementArrays(g: Array[Array[Short]]) = { //Loads array to GPU, returns its ID
 		for (ea <- g) yield {
 			val id = glxCreateBufferID()
-			val data = createBuffer(ea)
+			val data = createBufferS(ea)
 			glxTransferDataElementArray(id, data)
 			id
 		}
@@ -77,45 +72,57 @@ package object ololo {
 	def glxLoadPolyhedron(p: Polyhedron) = {
 		val VAOid = glGenVertexArrays()
 		glBindVertexArray(VAOid)
-		val verts = glxLoadArray(p._1)
+		val verts = glxLoadArray(p.verts)
 		glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
 		
-		val indices = glxLoadElementArrays(p._2)
+		val indices = glxLoadElementArrays(p.faces)
 		
-		() => {//return procedure that draws it
-			glBindVertexArray(VAOid)
-			glBindBuffer(GL_ARRAY_BUFFER, verts)
-			glEnableVertexAttribArray(0)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-			var i = 0 
-			while (i < indices.length) {
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices(i))
-				glDrawElements(GL_POLYGON, p._2(i).length, GL_UNSIGNED_BYTE, 0)
-				i += 1
+		val (Array(e1, e2, e3), Array(f1, f2, f3)) = (p.edge_color, p.face_color)
+		
+		new GLDrawable {
+			private def draw_inner() {
+				glBindBuffer(GL_ARRAY_BUFFER, verts)
+				var i = 0; while (i < indices.length) {
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices(i))
+					glDrawElements(GL_POLYGON, p.faces(i).length, GL_UNSIGNED_SHORT, 0)
+					i += 1
+				}
 			}
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-			glBindBuffer(GL_ARRAY_BUFFER, 0)
-			glDisableVertexAttribArray(0)
-			glBindVertexArray(0)
+			def draw() {
+				glBindVertexArray(VAOid)
+				glEnableVertexAttribArray(0)
+
+				glColor3f(f1, f2, f3)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+				draw_inner()
+				glColor3f(e1, e2, e3)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+				glLineWidth(2)
+				draw_inner()
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+				glBindBuffer(GL_ARRAY_BUFFER, 0)
+				glDisableVertexAttribArray(0)
+				glBindVertexArray(0)
+			}
+			override def finalize() {//clean GPU stuff
+				glBindBuffer(GL_ARRAY_BUFFER, 0)
+				glDeleteBuffers(verts)
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+				var i = 0; while (i < indices.length) {
+					glDeleteBuffers(indices(i))
+					i += 1
+				}
+
+				glBindVertexArray(0)
+				glDeleteVertexArrays(VAOid)
+			}
 		}
 	}
-
-	
-	////No more needed, throw it somewhere...
-	//	def foreach2[A, B](a: Seq[A], b: Seq[B])(proc: (A, B) => Unit) {
-	//		val ai = a.iterator
-	//		val bi = b.iterator
-	//		while (ai.hasNext && bi.hasNext) {
-	//			proc(ai.next, bi.next)
-	//		}
-	//	}
-	//	def foreach2inv[A, B](a: Seq[A], b: Seq[B])(proc: (A, B) => Unit) {
-	//		val ai = a.reverseIterator
-	//		val bi = b.reverseIterator
-	//		while (ai.hasNext && bi.hasNext) {
-	//			proc(ai.next, bi.next)
-	//		}
-	//	}
+//	def glxCreateAxes(l: Float) = {
+//		
+//	}
 
 	//	lazy val GLCapabilities = {
 	//		val obj = GLContext.getCapabilities()
