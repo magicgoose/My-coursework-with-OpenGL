@@ -18,3 +18,8 @@ libs/*
 .classpath
 .cache
 .settings/*
+
+#some extra garbage...don't mind
+scala/*
+proguard.pro
+src\magicgoose\ololo\Starter.java

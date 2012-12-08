@@ -71,7 +71,7 @@ object Main {
 			new LWJGLTimeProvider())
 
 		//GUI setup
-		nifty.fromXml("gui.xml", "main", MainScreenController)
+		nifty.fromXml("gui/gui.xml", "main", MainScreenController)
 
 		val geom_types = IndexedSeq("Cuboid", "Tetrahedron", "Ellipsoid")
 		val dropdown_geom_type = nifty.getScreen("main").findNiftyControl("geom_type", classOf[DropDown[String]])
@@ -84,11 +84,11 @@ object Main {
 
 		//Setup shaders
 		val shVertexPerspectiveColored =
-			glxLoadShader("src/shaders/vertex.glsl", GL_VERTEX_SHADER)
+			glxLoadShader("shaders/vertex.glsl", GL_VERTEX_SHADER)
 		val shVertexPerspectiveUColor =
-			glxLoadShader("src/shaders/vertex_uniform_color.glsl", GL_VERTEX_SHADER)
+			glxLoadShader("shaders/vertex_uniform_color.glsl", GL_VERTEX_SHADER)
 		val shFragmentSimple =
-			glxLoadShader("src/shaders/fragment.glsl", GL_FRAGMENT_SHADER)
+			glxLoadShader("shaders/fragment.glsl", GL_FRAGMENT_SHADER)
 		val programColored =
 			glxCreateShaderProgram(
 				shVertexPerspectiveColored,
