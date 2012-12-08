@@ -20,7 +20,7 @@ class Quaternion private (val x: Double, val y: Double, val z: Double, val w: Do
 			-D + ( E - F - G + H) / 2,
 			 B + (-E - F + G + H) / 2)
 	}
-	lazy val rotationMatrix = {// for use with glMultMatrix
+	lazy val matrix = {
 		val x2 = (x * x).toFloat
 		val y2 = (y * y).toFloat
 		val z2 = (z * z).toFloat
@@ -30,13 +30,12 @@ class Quaternion private (val x: Double, val y: Double, val z: Double, val w: Do
 		val wx = (w * x).toFloat
 		val wy = (w * y).toFloat
 		val wz = (w * z).toFloat
-		val matrix = Array[Float](
+		mkMatrix4f(
 			1f - 2f * (y2 + z2), 2f * (xy - wz),      2f * (xz + wy),      0,
 			2f * (xy + wz),      1f - 2f * (x2 + z2), 2f * (yz - wx),      0,
 			2f * (xz - wy),      2f * (yz + wx),      1f - 2f * (x2 + y2), 0,
 			0,                   0,                   0,                   1)
-		createBufferF(matrix)
-	} 
+	}
 }
 
 object Quaternion {
@@ -49,17 +48,33 @@ object Quaternion {
 		else
 			q / sqrt(mag2)
 	}
-	def fromXYrotation(p: Double, y: Double) = {
-		val sinp = sin(p)
-		val siny = sin(y)
-		val cosp = cos(p)
-		val cosy = cos(y)
-
+//	def fromEuler(heading: Double, attitude: Double, bank: Double) = {
+//		val c1 = math.cos(heading/2)
+//		val s1 = math.sin(heading/2)
+//		val c2 = math.cos(attitude/2)
+//		val s2 = math.sin(attitude/2)
+//		val c3 = math.cos(bank/2)
+//		val s3 = math.sin(bank/2)
+//		val c1c2 = c1*c2
+//		val s1s2 = s1*s2
+//
+//		normalized(
+//			new Quaternion(
+//				c1c2 * s3 + s1s2 * c3,
+//				s1 * c2 * c3 + c1 * s2 * s3,
+//				c1 * s2 * c3 - s1 * c2 * s3,
+//				c1c2 * c3 - s1s2 * s3))
+//	}
+	def fromXY(x: Double, y: Double) = {
+		val cx = math.cos(x)
+		val sx = math.sin(x)
+		val cy = math.cos(y)
+		val sy = math.sin(y)
 		normalized(
 			new Quaternion(
-				-sinp * siny,
-				 sinp * cosy,
-				 cosp * siny,
-				 cosp * cosy))
+				cx * sy,
+				sx * cy,
+				- sx * sy,
+				cx * cy))
 	}
 }
