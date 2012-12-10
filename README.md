@@ -1,7 +1,7 @@
 lwjgl-nifty-test-project
 ========================
-A project where Nifty-GUI and 3d animation are best friends.
-I'm learning OpenGL (via lwjgl) and this is what I do. The hardest steps are done. 8)
+I'm learning OpenGL (via lwjgl) and this is what I do.
+Uses Nifty-GUI for part of user interaction.
 
 To compile and run, following libs are required:
 ------------------------------------------------
