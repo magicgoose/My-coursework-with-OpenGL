@@ -50,6 +50,9 @@ object Main {
 	def launch_display() {
 		Logger.getLogger("de.lessvoid").setLevel(Level.WARNING) //otherwise Nifty-gui spams too much extra messages
 
+//================================================================================
+//Setup Display
+//================================================================================		
 		val desired_mode = Display.getAvailableDisplayModes().iterator
 			.filter(d => d.isFullscreenCapable() && d.getBitsPerPixel() >= 32) //we want fullscreen and true color modes only
 			.maxBy(d => d.getWidth() * d.getHeight()) //pick up max resolution
@@ -60,7 +63,9 @@ object Main {
 		val width = Display.getWidth()
 		val height = Display.getHeight()
 		val AR = width / height.toFloat
-
+//================================================================================
+//Setup GUI
+//================================================================================		
 		val inputSystem = new LwjglInputSystem()
 		inputSystem.startup()
 
@@ -70,7 +75,7 @@ object Main {
 			inputSystem,
 			new LWJGLTimeProvider())
 
-		//GUI setup
+		
 		nifty.fromXml("gui/gui.xml", "main", MainScreenController)
 
 		val geom_types = IndexedSeq("Cuboid", "Tetrahedron", "Ellipsoid")
@@ -81,8 +86,9 @@ object Main {
 		MainScreenController.actions_click += (("button_exit", () => {
 			nifty.exit()
 		}))
-
-		//Setup shaders
+//================================================================================
+//Setup shaders
+//================================================================================
 		val shVertexPerspectiveColored =
 			glxLoadShader("shaders/vertex.glsl", GL_VERTEX_SHADER)
 		val shVertexPerspectiveUColor =
@@ -98,7 +104,9 @@ object Main {
 				shVertexPerspectiveUColor,
 				shFragmentSimple)
 
-		//Setup matrices
+//================================================================================
+//Matrix helper methods
+//================================================================================		
 		def createProjectionMatrix(fov: Float, near: Float, far: Float) = {
 			val projectionMatrix = new Matrix4f()
 
@@ -113,28 +121,54 @@ object Main {
 			projectionMatrix.m32 = -((2 * near * far) / frustum_length)
 			projectionMatrix
 		}
-		val projectionMatrix = createProjectionMatrix(120.0f, 0.5f, 100.0f)
-		def createModelviewMatrix(camera_distance: Float) = {
-			var modelviewMatrix = new Matrix4f()
-			val cameraPos = new Vector3f(0, 0, -camera_distance)
-			Matrix4f.translate(cameraPos, modelviewMatrix, modelviewMatrix)
-			modelviewMatrix
-		}
-		var modelviewMatrix = createModelviewMatrix(4)
-
+//================================================================================
+//Geometry transformation-related vars and vals 
+//================================================================================		
+		var rotation = Quaternion.unit
+		val near_clip = 0.5f
+		val far_clip = 100.0f
 		
-		//Setup objects
-		r_geom = Vector(
-			glxCreateAxes(1, programColored),
-			glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
-			)
+		val createFiltered = Array.fill[Float](2) _
+		val fov = createFiltered(60.0f)
+		val scale = createFiltered(3.0f)
 
-		//Counters
+		val modelScale = new Vector3f(scale(1), scale(1), scale(1))
+		val cameraOffset = new Vector3f(0, 0, -10)
+		
+		var projectionMatrix = createProjectionMatrix(fov(1), near_clip, far_clip)
+		var modelviewMatrix = new Matrix4f()
+
+		def updateModelScale() =
+			modelScale.set(scale(0), scale(0), scale(0))
+		def updateCameraFOV() =
+			projectionMatrix = createProjectionMatrix(fov(0), near_clip, far_clip)
+
+		//Smooth transitions
+		def filter_step(x: Array[Float], threshold: Float, speed: Float, upd_fun: => Unit) =
+			if (math.abs(x(1) - x(0)) > threshold) {
+				x(0) = x(1)*speed + x(0)*(1 - speed)
+				upd_fun
+			}
+		def change_step(x: Array[Float], steps: Int, speed: Float, vmin: Float, vmax: Float) {
+			x(1) += (x(0) * steps.toFloat * speed) 
+			x(1) = (x(1) min vmax) max vmin
+		}
+//================================================================================
+//Setup displayed objects
+//================================================================================		
+		val dobj_axes = glxCreateAxes(1, programColored)
+		var dobj_current_geometry = glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
+
+//================================================================================
+//Counters
+//================================================================================		
 		val starttime = Sys.getTime()
 		var endtime = 0L
 		var drawn_frames = 0L
 
-		//Helper draw procedures
+//================================================================================
+//Helper draw procedures
+//================================================================================		
 		def display_ready3d() {
 			glEnable(GL_CULL_FACE)
 			glDisable(GL_TEXTURE_2D) //without it, non-textured geometry fails to render correctly
@@ -143,7 +177,7 @@ object Main {
 		}
 		
 		def display_ready2d() {
-			glUseProgram(0) //Forget about custom shaders, nifty works with old OpenGl stuff
+			glUseProgram(0) //Forget about custom shaders
 			glMatrixMode(GL_PROJECTION)
 			glLoadIdentity()
 			glOrtho(0, width, height, 0, 0, 1)
@@ -157,10 +191,15 @@ object Main {
 		}
 
 		def draw_3d() {
-			r_geom.foreach(_.draw_full(projectionMatrix, modelviewMatrix))
-		}
-
-		def display() {
+			dobj_axes
+				.draw_full(projectionMatrix, modelviewMatrix)
+			dobj_current_geometry
+				.draw_full(projectionMatrix, modelviewMatrix)
+		}		
+//================================================================================
+//Main update&draw routine
+//================================================================================
+		def updateAndDisplay() {
 			glViewport(0, 0, width, height)
 			glClearDepth(1)
 			glClearColor(0, 0, 0, 1)
@@ -171,10 +210,22 @@ object Main {
 					(-Mouse.getDX, Mouse.getDY)
 				else
 					(1, 0)
+			
+			val mwheel = Mouse.getDWheel()
+			if (mwheel != 0) {
+				if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
+					change_step(scale, mwheel, 1/1000f, 0.1f, 10f)
+				else
+					change_step(fov, -mwheel, 1/4000f, 10f, 160f)
+			}
+			filter_step(scale, 0.001f, 0.1f, updateModelScale())
+			filter_step(fov, 0.1f, 0.1f, updateCameraFOV())
 
 			if (rx != 0 || ry != 0) {
 				rotation *= Quaternion.fromXY(rx.toDouble / 200, ry.toDouble / 200)
-				modelviewMatrix = createModelviewMatrix(4)
+				modelviewMatrix = new Matrix4f
+				Matrix4f.translate(cameraOffset, modelviewMatrix, modelviewMatrix)
+				Matrix4f.scale(modelScale, modelviewMatrix, modelviewMatrix)
 				Matrix4f.mul(modelviewMatrix, rotation.matrix, modelviewMatrix)
 			}
 
@@ -185,24 +236,12 @@ object Main {
 			Display.update()
 		}
 
-		while (!(Display.isCloseRequested() || nifty.update()) /*&& (drawn_frames < 4000)*/ ) { //quit if nifty.update() returns true
-			display()
+		while (!(Display.isCloseRequested() || nifty.update())) { //quit if nifty.update() returns true
+			updateAndDisplay()
 			drawn_frames += 1
 			endtime = Sys.getTime()
 		}
 		println("Average FPS = " + (drawn_frames * Sys.getTimerResolution().toDouble / (endtime - starttime)))
 		Display.destroy()
 	}
-
-	var r_geom = Vector.empty[GLDrawable] //current figures, ready to draw
-
-	var rotation = Quaternion.unit
-
-//	def stopOnError() {
-//		val error = glGetError()
-//		if (error != 0) {
-//			println(gluErrorString(error))
-//			throw new Throwable
-//		}
-//	}
 }

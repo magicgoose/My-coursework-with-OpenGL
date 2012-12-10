@@ -11,26 +11,28 @@
 		</effect>
 	</style>
 	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
-
 		<layer id="settings" childLayout="vertical" align="right" backgroundColor="#0000">
-			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" style="nifty-panel" padding="20px" width="25%">
+			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" style="nifty-panel" padding="20px" width="25%"
+			    childClip="true">
 				<panel id="s0" childLayout="horizontal">
 					<control name="label" id="l0" text="Geometry type:" align="left" width="50%"></control>
 					<control name="dropDown" id="geom_type" align="right" />
 				</panel>
-				<panel id="s1" childLayout="horizontal">
-					<control name="label" id="l1" text="Distance:" align="left" width="50%"></control>
-					<control name="textfield" id="tf_dist" text="1" align="right" />
-				</panel>
 				<panel id="s2" childLayout="horizontal">
 					<control name="label" id="l2" text="Rotating speed:" align="left" width="50%"></control>
-					<control name="textfield" id="tf_rotate" text="0" align="right" />
+					<control name="textfield" id="tf_rotate" text="1" align="right" />
 				</panel>
-
 
 				<control name="button" id="button_exit" label="Click me">
 					<interact onClick="click(button_exit)" />
 				</control>
+				
+				<text font='aurulent-sans-16.fnt' align="left" valign="top" wrap='true'
+				    text=
+"Click LMB and drag to rotate scene.
+Roll mouse wheel to change camera zoom.
+Roll mouse wheel while pressing CTRL to scale scene."
+				    />
 			</panel>
 		</layer>
 	</screen>
