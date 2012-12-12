@@ -103,8 +103,11 @@ object Main {
 		var plane_enabled = true
 		var axes_enabled = true
 		
-		def setActiveFigure(x: Polyhedron) {
-			dobj_current_geometry = glxLoadPolyhedron(x, programUColor)
+		def setActiveFigure(x: Polyhedron, ftype: Int) {
+			ftype match {
+				case 0 => dobj_current_geometry = glxLoadPolyhedron(x, programUColor)
+				case _ =>
+			}
 		}
 //================================================================================
 //Setup GUI
@@ -156,8 +159,8 @@ object Main {
 				)
 		MainScreenController.actions_selection_changed.addMany(
 				("geom_type", {
-					case 0 => setActiveFigure(PredefinedShapes.cube)
-					case 1 => setActiveFigure(PredefinedShapes.tetrahedron)
+					case 0 => setActiveFigure(PredefinedShapes.cube, 0)
+					case 1 => setActiveFigure(PredefinedShapes.tetrahedron, 0)
 					case x => println("figure with index " + x + " is not yet defined")
 				}))
 //================================================================================
