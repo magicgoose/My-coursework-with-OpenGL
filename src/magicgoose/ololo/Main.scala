@@ -102,6 +102,10 @@ object Main {
 		}
 		var plane_enabled = true
 		var axes_enabled = true
+		
+		def setActiveFigure(x: Polyhedron) {
+			dobj_current_geometry = glxLoadPolyhedron(x, programUColor)
+		}
 //================================================================================
 //Setup GUI
 //================================================================================		
@@ -142,17 +146,20 @@ object Main {
 		MainScreenController.actions_click.addMany(
 				("button_exit", () => nifty.exit()),
 				("check_draw_plane", () => {
-					checkbox_draw_plane.toggle()
-					plane_enabled = checkbox_draw_plane.isChecked()
+					plane_enabled = !checkbox_draw_plane.isChecked()
 					panel_plane.setVisible(plane_enabled)
 				}),
 				("check_draw_axes", () => {
-					checkbox_draw_axes.toggle()
-					axes_enabled = checkbox_draw_axes.isChecked()
+					axes_enabled = !checkbox_draw_axes.isChecked()
 				}),				
 				("button_update_plane", () => updatePlaneParams(tf_plane_params))
 				)
-
+		MainScreenController.actions_selection_changed.addMany(
+				("geom_type", {
+					case 0 => setActiveFigure(PredefinedShapes.cube)
+					case 1 => setActiveFigure(PredefinedShapes.tetrahedron)
+					case x => println("figure with index " + x + " is not yet defined")
+				}))
 //================================================================================
 //Matrix helper methods
 //================================================================================		

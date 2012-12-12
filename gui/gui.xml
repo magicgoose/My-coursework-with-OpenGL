@@ -18,19 +18,15 @@
 				<panel id="s0" childLayout="horizontal">
 					<text style="nifty-label" id="l0" textHAlign="right" width="50%"
 					    text="Geometry type:" />
-					<control name="dropDown" id="geom_type" textHAlign="right" />
+					<control name="dropDown" id="geom_type" textHAlign="right" visibleToMouse="true" />
 				</panel>
 				<panel childLayout="horizontal" width="*">
-					<control name="checkbox" id="check_draw_axes" checked="true">
-					    <interact onClick="click(check_draw_axes)"/>
-				    </control>
+					<control name="checkbox" id="check_draw_axes" checked="true" />
 				    <text style="nifty-label" textHAlign="left" width="50%"
 				        text="Draw \#f00f#X\#0f0f#Y\#00ff#Z\#ffff# axes" />
 			    </panel>
 				<panel childLayout="horizontal" width="*">
-					<control name="checkbox" id="check_draw_plane" checked="true">
-					    <interact onClick="click(check_draw_plane)"/>
-				    </control>
+					<control name="checkbox" id="check_draw_plane" checked="true" />
 				    <text style="nifty-label" textHAlign="left" width="50%"
 				        text="Draw plane" />
 			    </panel>
@@ -58,28 +54,15 @@
 			            <control name="textfield" id="planeD" width="15%"
 			                text="1"/>
 			        </panel>
-			        <control name="button" id="button_update_plane" label="Update plane">
-			            <interact onClick="click(button_update_plane)" />
-		            </control>
-			        
-			    </panel>
-<!-- 				<panel id="s2" childLayout="horizontal">
-					<text style="nifty-label" id="l2"
-					    text="Rotating speed:" textHAlign="right" width="50%"/>
-					<control name="textfield" id="tf_rotate" text="1" textHAlign="right" />
-				</panel>
- -->
-				
-				
+			        <control name="button" id="button_update_plane" label="Update plane" />
+			    </panel>				
 				<text style="nifty-label" textHAlign="left" valign="top" wrap='true' width="80%"
 				    text=
 "Click LMB and drag to rotate scene.
 Roll mouse wheel to change camera zoom.
 Roll mouse wheel while pressing CTRL to scale scene."
 				    />
-				<control name="button" id="button_exit" label="Exit this awesome program" width="*">
-					<interact onClick="click(button_exit)" />
-				</control>
+				<control name="button" id="button_exit" label="Exit this awesome program" width="*" />
 			</panel>
 		</layer>
 	</screen>
