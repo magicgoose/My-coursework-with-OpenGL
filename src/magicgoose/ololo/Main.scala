@@ -41,6 +41,9 @@ import org.lwjgl.util.jinput.LWJGLMouse
 import org.lwjgl.input.Mouse
 import org.lwjgl.util.vector.Matrix4f
 import org.lwjgl.util.vector.Vector3f
+import de.lessvoid.nifty.controls.CheckBox
+import MutableMapExtension._
+import de.lessvoid.nifty.controls.NiftyControl
 
 object Main {
 	def main(args: Array[String]) {
@@ -64,29 +67,6 @@ object Main {
 		val height = Display.getHeight()
 		val AR = width / height.toFloat
 //================================================================================
-//Setup GUI
-//================================================================================		
-		val inputSystem = new LwjglInputSystem()
-		inputSystem.startup()
-
-		val nifty = new Nifty(
-			new LwjglRenderDevice(),
-			new NullSoundDevice(),
-			inputSystem,
-			new LWJGLTimeProvider())
-
-		
-		nifty.fromXml("gui/gui.xml", "main", MainScreenController)
-
-		val geom_types = IndexedSeq("Cuboid", "Tetrahedron", "Ellipsoid")
-		val dropdown_geom_type = nifty.getScreen("main").findNiftyControl("geom_type", classOf[DropDown[String]])
-		for (t <- geom_types)
-			dropdown_geom_type.addItem(t)
-
-		MainScreenController.actions_click += (("button_exit", () => {
-			nifty.exit()
-		}))
-//================================================================================
 //Setup shaders
 //================================================================================
 		val shVertexPerspectiveColored =
@@ -103,6 +83,75 @@ object Main {
 			glxCreateShaderProgram(
 				shVertexPerspectiveUColor,
 				shFragmentSimple)
+
+//================================================================================
+//Setup displayed objects
+//================================================================================		
+		val dobj_axes = glxCreateAxes(1, programColored)
+		var dobj_current_geometry = glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
+		var dobj_plane = Option.empty[GLDrawable]
+
+		var plane_params = Seq.fill(4)(1f)
+		def updatePlaneParams(src: Seq[TextField]) {
+			try {
+				plane_params = src.map(_.getRealText.toFloat)
+				dobj_plane = Some(glxCreatePlane(plane_params, 10000, programUColor))
+			} catch {
+				case _ => //TODO: create some error message
+			}
+		}
+		var plane_enabled = true
+		var axes_enabled = true
+//================================================================================
+//Setup GUI
+//================================================================================		
+		val inputSystem = new LwjglInputSystem()
+		inputSystem.startup()
+
+		val nifty = new Nifty(
+			new LwjglRenderDevice(),
+			new NullSoundDevice(),
+			inputSystem,
+			new LWJGLTimeProvider())
+
+		
+		nifty.fromXml("gui/gui.xml", "main", MainScreenController)
+		val main_screen = nifty.getScreen("main")
+		
+		val geom_types = IndexedSeq("Cuboid", "Tetrahedron", "Ellipsoid")
+		val dropdown_geom_type = main_screen
+			.findNiftyControl("geom_type", classOf[DropDown[String]])
+
+		for (t <- geom_types)
+			dropdown_geom_type.addItem(t)
+
+		val checkbox_draw_plane = main_screen
+			.findNiftyControl("check_draw_plane", classOf[CheckBox])
+		val checkbox_draw_axes = main_screen
+			.findNiftyControl("check_draw_axes", classOf[CheckBox])
+		
+		val panel_plane = main_screen.findElementByName("panel_plane")
+
+		val tf_plane_params = Vector("A", "B", "C", "D").map(l => {
+			main_screen.findNiftyControl("plane"+l, classOf[TextField])
+		})
+		
+
+		updatePlaneParams(tf_plane_params)
+
+		MainScreenController.actions_click.addMany(
+				("button_exit", () => nifty.exit()),
+				("check_draw_plane", () => {
+					checkbox_draw_plane.toggle()
+					plane_enabled = checkbox_draw_plane.isChecked()
+					panel_plane.setVisible(plane_enabled)
+				}),
+				("check_draw_axes", () => {
+					checkbox_draw_axes.toggle()
+					axes_enabled = checkbox_draw_axes.isChecked()
+				}),				
+				("button_update_plane", () => updatePlaneParams(tf_plane_params))
+				)
 
 //================================================================================
 //Matrix helper methods
@@ -153,11 +202,6 @@ object Main {
 			x(1) += (x(0) * steps.toFloat * speed) 
 			x(1) = (x(1) min vmax) max vmin
 		}
-//================================================================================
-//Setup displayed objects
-//================================================================================		
-		val dobj_axes = glxCreateAxes(1, programColored)
-		var dobj_current_geometry = glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
 
 //================================================================================
 //Counters
@@ -174,6 +218,7 @@ object Main {
 			glDisable(GL_TEXTURE_2D) //without it, non-textured geometry fails to render correctly
 			glEnable(GL_LINE_SMOOTH)
 			glEnable(GL_MULTISAMPLE)
+			glEnable(GL_DEPTH_TEST)
 		}
 		
 		def display_ready2d() {
@@ -191,27 +236,32 @@ object Main {
 		}
 
 		def draw_3d() {
-			dobj_axes
-				.draw_full(projectionMatrix, modelviewMatrix)
+			if (axes_enabled)
+				dobj_axes
+					.draw_full(projectionMatrix, modelviewMatrix)
 			dobj_current_geometry
 				.draw_full(projectionMatrix, modelviewMatrix)
-		}		
+			if (plane_enabled)
+				dobj_plane.foreach(_
+					.draw_full(projectionMatrix, modelviewMatrix))
+		}
 //================================================================================
 //Main update&draw routine
 //================================================================================
+		def isMouseNotOverGUI = !main_screen.isMouseOverElement()
+		
 		def updateAndDisplay() {
 			glViewport(0, 0, width, height)
 			glClearDepth(1)
 			glClearColor(0, 0, 0, 1)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-			val (rx, ry) = //scene rotation
-				if (Mouse.isButtonDown(0))
-					(-Mouse.getDX, Mouse.getDY)
-				else
-					(1, 0)
-			
-			val mwheel = Mouse.getDWheel()
+		
+			val mwheel =
+				if (isMouseNotOverGUI)
+					Mouse.getDWheel()
+				else {Mouse.getDWheel(); 0}
+				
 			if (mwheel != 0) {
 				if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
 					change_step(scale, mwheel, 1/1000f, 0.1f, 10f)
@@ -221,8 +271,13 @@ object Main {
 			filter_step(scale, 0.001f, 0.1f, updateModelScale())
 			filter_step(fov, 0.1f, 0.1f, updateCameraFOV())
 
+			val (rx, ry) = //scene rotation
+				if (Mouse.isButtonDown(0) && isMouseNotOverGUI)
+					(-Mouse.getDX.toDouble, Mouse.getDY.toDouble)
+				else
+					(0.2, 0.05)
 			if (rx != 0 || ry != 0) {
-				rotation *= Quaternion.fromXY(rx.toDouble / 200, ry.toDouble / 200)
+				rotation *= Quaternion.fromXY(rx / 200, ry / 200)
 				modelviewMatrix = new Matrix4f
 				Matrix4f.translate(cameraOffset, modelviewMatrix, modelviewMatrix)
 				Matrix4f.scale(modelScale, modelviewMatrix, modelviewMatrix)

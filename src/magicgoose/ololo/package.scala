@@ -195,6 +195,85 @@ package object ololo {
 			}
 		}
 	}
+	
+	def spin_max(a: Float, b: Float, c: Float, spins: Int = 0): (Float, Float, Float, Int) = {
+		if (a >= b && a >= c)
+			(a, b, c, spins)
+		else spin_max(b, c, a, spins + 1)
+	}
+	def spin_back(a: Float, b: Float, c: Float, spins: Int) = {
+		spins match {
+			case 0 => (a, b, c)
+			case 1 => (c, a, b)
+			case _ => (b, c, a)
+		}
+	}
+	
+	def glxCreatePlane(params: Seq[Float], mag: Float, pId: Int) = {//mag is lower bound of quad size
+		val VAOid = glGenVertexArrays()
+		glBindVertexArray(VAOid)
+		
+		val verts = glxLoadArray({
+			val Seq(a, b, c, d) = params
+			val (sa, sb, sc, spins) = spin_max(a, b, c)
+			def calcX(y: Float, z: Float) =
+				(-d - y*sb - z*sc) / sa
+			def createPoint(y: Float, z: Float) =
+				spin_back(calcX(y, z), y, z, spins)
+			Seq((mag, mag), (-mag, mag), (-mag, -mag), (mag, -mag)).iterator
+				.map(createPoint _ tupled)
+				.flatMap(p => Seq(p._1, p._2, p._3))
+				.toArray
+		})
+		
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0)
+
+		glUseProgram(pId)
+		val colorLocation = glGetUniformLocation(pId, "vertexColor")
+		
+		val projectionMatrixLocation = glGetUniformLocation(pId, "projectionMatrix")
+		val modelviewMatrixLocation = glGetUniformLocation(pId, "modelviewMatrix")
+		
+		new GLDrawable {
+			def pre_draw(
+					projectionMatrix: Matrix4f,
+					modelviewMatrix: Matrix4f) {
+
+				glUseProgram(pId)
+				glBindVertexArray(VAOid)
+				glEnableVertexAttribArray(0)
+				glBindAttribLocation(pId, 0, "in_Position")
+				
+				glxUploadUniform(projectionMatrix, projectionMatrixLocation)
+				glxUploadUniform(modelviewMatrix, modelviewMatrixLocation)
+				glDisable(GL_CULL_FACE)
+			}
+			def post_draw() {
+				glBindBuffer(GL_ARRAY_BUFFER, 0)
+				glDisableVertexAttribArray(0)
+				glBindVertexArray(0)
+				glUseProgram(0)
+				glEnable(GL_CULL_FACE)
+			}
+			def draw() {
+				glBindBuffer(GL_ARRAY_BUFFER, verts)
+				
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+				glUniform4f(colorLocation, 0.4f, 0.2f, 0.2f, 0.7f)
+				draw_mesh()
+			}
+			private def draw_mesh() {
+				glDrawArrays(GL_POLYGON, 0, 4)
+			}
+			override def finalize() {//clean GPU stuff
+				glBindBuffer(GL_ARRAY_BUFFER, 0)
+				glDeleteBuffers(verts)
+				glBindVertexArray(0)
+				glDeleteVertexArrays(VAOid)
+			}
+		}
+
+	}
 
 	def glxLoadShader(filename: String, shader_type: Int) = {
 		val src = slurp(filename)

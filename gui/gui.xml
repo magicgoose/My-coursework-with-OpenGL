@@ -13,26 +13,73 @@
 	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
 		<layer id="settings" childLayout="vertical" align="right" backgroundColor="#0000">
 			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" style="nifty-panel" padding="20px" width="25%"
+			    visibleToMouse="true"
 			    childClip="true">
 				<panel id="s0" childLayout="horizontal">
-					<control name="label" id="l0" text="Geometry type:" align="left" width="50%"></control>
-					<control name="dropDown" id="geom_type" align="right" />
+					<text style="nifty-label" id="l0" textHAlign="right" width="50%"
+					    text="Geometry type:" />
+					<control name="dropDown" id="geom_type" textHAlign="right" />
 				</panel>
-				<panel id="s2" childLayout="horizontal">
-					<control name="label" id="l2" text="Rotating speed:" align="left" width="50%"></control>
-					<control name="textfield" id="tf_rotate" text="1" align="right" />
-				</panel>
+				<panel childLayout="horizontal" width="*">
+					<control name="checkbox" id="check_draw_axes" checked="true">
+					    <interact onClick="click(check_draw_axes)"/>
+				    </control>
+				    <text style="nifty-label" textHAlign="left" width="50%"
+				        text="Draw \#f00f#X\#0f0f#Y\#00ff#Z\#ffff# axes" />
+			    </panel>
+				<panel childLayout="horizontal" width="*">
+					<control name="checkbox" id="check_draw_plane" checked="true">
+					    <interact onClick="click(check_draw_plane)"/>
+				    </control>
+				    <text style="nifty-label" textHAlign="left" width="50%"
+				        text="Draw plane" />
+			    </panel>
+			    <panel id="panel_plane" childLayout="vertical">
+			        <text style="nifty-label" textHAlign="left" width="100%" wrap='true'
+			            text="Plane equation is \#0f0f#Ax + By + Cz + D = 0\#ffff#" />
+			        <panel childLayout="horizontal">
+			            <text style="nifty-label" textHAlign="left"
+			                text="A = "/>
+			            <control name="textfield" id="planeA" width="15%"
+			                text="1"/>
 
-				<control name="button" id="button_exit" label="Click me">
-					<interact onClick="click(button_exit)" />
-				</control>
+			            <text style="nifty-label" textHAlign="left"
+			                text="B = "/>
+			            <control name="textfield" id="planeB" width="15%"
+			                text="1"/>
+
+			            <text style="nifty-label" textHAlign="left"
+			                text="C = "/>
+			            <control name="textfield" id="planeC" width="15%"
+			                text="1"/>
+
+			            <text style="nifty-label" textHAlign="left"
+			                text="D = "/>
+			            <control name="textfield" id="planeD" width="15%"
+			                text="1"/>
+			        </panel>
+			        <control name="button" id="button_update_plane" label="Update plane">
+			            <interact onClick="click(button_update_plane)" />
+		            </control>
+			        
+			    </panel>
+<!-- 				<panel id="s2" childLayout="horizontal">
+					<text style="nifty-label" id="l2"
+					    text="Rotating speed:" textHAlign="right" width="50%"/>
+					<control name="textfield" id="tf_rotate" text="1" textHAlign="right" />
+				</panel>
+ -->
 				
-				<text font='aurulent-sans-16.fnt' align="left" valign="top" wrap='true'
+				
+				<text style="nifty-label" textHAlign="left" valign="top" wrap='true' width="80%"
 				    text=
 "Click LMB and drag to rotate scene.
 Roll mouse wheel to change camera zoom.
 Roll mouse wheel while pressing CTRL to scale scene."
 				    />
+				<control name="button" id="button_exit" label="Exit this awesome program" width="*">
+					<interact onClick="click(button_exit)" />
+				</control>
 			</panel>
 		</layer>
 	</screen>

@@ -17,6 +17,4 @@ object PredefinedShapes {
 			Array(7, 0, 3, 4),
 			Array(6, 1, 0, 7),
 			Array(4, 3, 2, 5)))
-//		edge_color = Array(1, 1, 1),
-//		face_color = Array(0.2f, 0.6f, 0.2f))
 }
