@@ -44,6 +44,7 @@ import org.lwjgl.util.vector.Vector3f
 import de.lessvoid.nifty.controls.CheckBox
 import MutableMapExtension._
 import de.lessvoid.nifty.controls.NiftyControl
+import scala.util.Random
 
 object Main {
 	def main(args: Array[String]) {
@@ -88,22 +89,23 @@ object Main {
 //Setup displayed objects
 //================================================================================		
 		val dobj_axes = glxCreateAxes(1, programColored)
+		var current_geometry = PredefinedShapes.cube
+		var shading_type = 0
 		var dobj_current_geometry = glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
 		var dobj_plane = Option.empty[GLDrawable]
 
-		var plane_params = Seq.fill(4)(1f)
-		def updatePlaneParams(src: Seq[TextField]) {
-			try {
-				plane_params = src.map(_.getRealText.toFloat)
-				dobj_plane = Some(glxCreatePlane(plane_params, 10000, programUColor))
-			} catch {
-				case _ => //TODO: create some error message
-			}
-		}
+		val plane_params = Array(1f, 2f, 3f, 0f)
+
+		def updatePlane() =
+			dobj_plane = Some(glxCreatePlane(plane_params, 10000, programUColor))
+		updatePlane()
+
 		var plane_enabled = true
 		var axes_enabled = true
 		
 		def setActiveFigure(x: Polyhedron, ftype: Int) {
+			shading_type = ftype
+			current_geometry = x
 			ftype match {
 				case 0 => dobj_current_geometry = glxLoadPolyhedron(x, programUColor)
 				case _ =>
@@ -139,13 +141,6 @@ object Main {
 		
 		val panel_plane = main_screen.findElementByName("panel_plane")
 
-		val tf_plane_params = Vector("A", "B", "C", "D").map(l => {
-			main_screen.findNiftyControl("plane"+l, classOf[TextField])
-		})
-		
-
-		updatePlaneParams(tf_plane_params)
-
 		MainScreenController.actions_click.addMany(
 				("button_exit", () => nifty.exit()),
 				("check_draw_plane", () => {
@@ -154,8 +149,13 @@ object Main {
 				}),
 				("check_draw_axes", () => {
 					axes_enabled = !checkbox_draw_axes.isChecked()
-				}),				
-				("button_update_plane", () => updatePlaneParams(tf_plane_params))
+				}),
+				("clip_plane", () => {
+					val Array(a, b, c, d) = plane_params
+					val plane = new Plane(a, b, c, d)
+					current_geometry = current_geometry.clip(plane)
+					setActiveFigure(current_geometry, shading_type)
+				})
 				)
 		MainScreenController.actions_selection_changed.addMany(
 				("geom_type", {
@@ -163,6 +163,25 @@ object Main {
 					case 1 => setActiveFigure(PredefinedShapes.tetrahedron, 0)
 					case x => println("figure with index " + x + " is not yet defined")
 				}))
+		
+		{
+			val plane_id = """(plane)(.*)""".r
+			MainScreenController.actions_text_changed = Some((id, value) => {
+				id match {
+					case plane_id(_, i) if i.length == 1 => {
+						val idx = (i.charAt(0)) - 'A'
+						try {
+							val f = value.toFloat
+							plane_params(idx) = f
+							updatePlane()
+						} catch {
+							case _ =>
+						}
+					}
+					case _ =>
+				}
+			})
+		}
 //================================================================================
 //Matrix helper methods
 //================================================================================		
@@ -260,6 +279,7 @@ object Main {
 //================================================================================
 		def isMouseNotOverGUI = !main_screen.isMouseOverElement()
 		
+		var rot_angle = Random.nextDouble * math.Pi * 200
 		def updateAndDisplay() {
 			glViewport(0, 0, width, height)
 			glClearDepth(1)
@@ -284,8 +304,11 @@ object Main {
 			val (rx, ry) = //scene rotation
 				if (Mouse.isButtonDown(0) && isMouseNotOverGUI)
 					(-Mouse.getDX.toDouble, Mouse.getDY.toDouble)
-				else
-					(0.2, 0.05)
+				else {
+					rot_angle += (Random.nextDouble() - 0.5)/10
+					
+					(math.cos(rot_angle) / 3, math.sin(rot_angle) / 3)
+				}
 			if (rx != 0 || ry != 0) {
 				rotation *= Quaternion.fromXY(rx / 200, ry / 200)
 				modelviewMatrix = new Matrix4f

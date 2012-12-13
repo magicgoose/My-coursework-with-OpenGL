@@ -23,7 +23,7 @@
 				<panel childLayout="horizontal" width="*">
 					<control name="checkbox" id="check_draw_axes" checked="true" />
 				    <text style="nifty-label" textHAlign="left" width="50%"
-				        text="Draw \#f00f#X\#0f0f#Y\#00ff#Z\#ffff# axes" />
+				        text="Draw \#f00f#X\#0f0f#Y\#00ff#Z\#ffff# unit vectors" />
 			    </panel>
 				<panel childLayout="horizontal" width="*">
 					<control name="checkbox" id="check_draw_plane" checked="true" />
@@ -42,20 +42,20 @@
 			            <text style="nifty-label" textHAlign="left"
 			                text="B = "/>
 			            <control name="textfield" id="planeB" width="15%"
-			                text="1"/>
+			                text="2"/>
 
 			            <text style="nifty-label" textHAlign="left"
 			                text="C = "/>
 			            <control name="textfield" id="planeC" width="15%"
-			                text="1"/>
+			                text="3"/>
 
 			            <text style="nifty-label" textHAlign="left"
 			                text="D = "/>
 			            <control name="textfield" id="planeD" width="15%"
-			                text="1"/>
+			                text="0"/>
 			        </panel>
-			        <control name="button" id="button_update_plane" label="Update plane" />
-			    </panel>				
+			        <control name="button" id="clip_plane" label="Clip figure with plane" width="*" />
+			    </panel>			
 				<text style="nifty-label" textHAlign="left" valign="top" wrap='true' width="80%"
 				    text=
 "Click LMB and drag to rotate scene.

@@ -24,6 +24,7 @@ import java.nio.ShortBuffer
 import java.io.IOException
 import org.lwjgl.util.vector.Matrix4f
 import org.lwjgl.opengl.GL20
+import scala.annotation.tailrec
 
 package object ololo {
 	val SIZEOF_FLOAT = java.lang.Float.SIZE / java.lang.Byte.SIZE
@@ -348,6 +349,34 @@ package object ololo {
 		m.m32 = m32
 		m.m33 = m33
 		m
+	}
+
+//Some sequence helper functions
+	@tailrec def reversedList[T](r: Iterator[T], acc: List[T] = Nil): List[T] = {
+		if (r.isEmpty) acc
+		else reversedList[T](r, r.next :: acc)
+	}
+	def spinBy[@specialized T](x: Seq[T], pred: T => Boolean) =
+		if (pred(x.head) && pred(x.last)) {
+			reversedList(x.reverseIterator.takeWhile(pred)) ++
+			x.takeWhile(pred)
+		} else {
+			x.dropWhile(!pred(_)).takeWhile(pred)
+		}
+	def spinBy2[@specialized T](x: Seq[T])(pred: T => Boolean) =
+		(spinBy[T](x, pred), spinBy[T](x, !pred(_)))
+
+	def extractLoop[T](x: Map[T, T]) = {
+		val whatever = x.head
+		val stop = whatever._1
+		def iteration(
+				acc: Seq[T] = Seq(whatever._1, whatever._2),
+				last: T = whatever._2): Seq[T] = {
+			val next = x(last)
+			if (next == stop) acc
+			else iteration(acc :+ next, next)
+		}
+		iteration()
 	}
 	//	lazy val GLCapabilities = {
 	//		val obj = GLContext.getCapabilities()
