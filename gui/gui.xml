@@ -52,9 +52,15 @@
 			            <text style="nifty-label" textHAlign="left"
 			                text="D = "/>
 			            <control name="textfield" id="planeD" width="15%"
-			                text="0"/>
+			                text="1"/>
 			        </panel>
 			        <control name="button" id="clip_plane" label="Clip figure with plane" width="*" />
+			        <panel childLayout="horizontal">
+			            <control name="checkbox" id="clip_plane_mode" checked="false"/>
+			            <text style="nifty-label" textHAlign="left"
+			                text="Open hole" />	            
+			        </panel>
+			        
 			    </panel>			
 				<text style="nifty-label" textHAlign="left" valign="top" wrap='true' width="80%"
 				    text=
@@ -65,5 +71,7 @@ Roll mouse wheel while pressing CTRL to scale scene."
 				<control name="button" id="button_exit" label="Exit this awesome program" width="*" />
 			</panel>
 		</layer>
+	
 	</screen>
+
 </nifty>

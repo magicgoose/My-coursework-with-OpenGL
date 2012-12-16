@@ -45,6 +45,8 @@ import de.lessvoid.nifty.controls.CheckBox
 import MutableMapExtension._
 import de.lessvoid.nifty.controls.NiftyControl
 import scala.util.Random
+import de.lessvoid.nifty.controls.MessageBox
+import de.lessvoid.nifty.controls.MessageBox.MessageType
 
 object Main {
 	def main(args: Array[String]) {
@@ -94,7 +96,7 @@ object Main {
 		var dobj_current_geometry = glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
 		var dobj_plane = Option.empty[GLDrawable]
 
-		val plane_params = Array(1f, 2f, 3f, 0f)
+		val plane_params = Array(1f, 2f, 3f, 1f)
 
 		def updatePlane() =
 			dobj_plane = Some(glxCreatePlane(plane_params, 10000, programUColor))
@@ -157,11 +159,26 @@ object Main {
 					setActiveFigure(current_geometry, shading_type)
 				})
 				)
+
+		//Using this var to suppress mouse handling while popup is active... It's dirty, but it works. I have no extra time to fight with nifty-gui. :/
+		var no_popups = true
+		MainScreenController.closeAction = Some(s => {
+			//println(s)
+			no_popups = true
+		})
+		def showWarning(s: String) {
+			val mb = new MessageBox(nifty, MessageType.ERROR, s, "OK")
+			no_popups = false
+			mb.show()
+		}
+
 		MainScreenController.actions_selection_changed.addMany(
 				("geom_type", {
 					case 0 => setActiveFigure(PredefinedShapes.cube, 0)
 					case 1 => setActiveFigure(PredefinedShapes.tetrahedron, 0)
-					case x => println("figure with index " + x + " is not yet defined")
+					case x => {
+						showWarning("Not implemented yet")
+					}
 				}))
 		
 		{
@@ -173,9 +190,16 @@ object Main {
 						try {
 							val f = value.toFloat
 							plane_params(idx) = f
-							updatePlane()
+							if (plane_params.iterator.take(3).forall(_ == 0)) {
+								showWarning("A*B*C must not be = 0\nFix it!")
+							} else if (plane_params.last == 0) {
+								showWarning("D must not be = 0.\nBecause the lamp will be dismembered.")
+							} else {
+								updatePlane()
+							}
 						} catch {
-							case _ =>
+							case ex: NumberFormatException => ()
+							case ex => showWarning(ex.toString)
 						}
 					}
 					case _ =>
@@ -277,7 +301,9 @@ object Main {
 //================================================================================
 //Main update&draw routine
 //================================================================================
-		def isMouseNotOverGUI = !main_screen.isMouseOverElement()
+		
+		def check_user_control = no_popups && !(
+				nifty.getCurrentScreen().isMouseOverElement())
 		
 		var rot_angle = Random.nextDouble * math.Pi * 200
 		def updateAndDisplay() {
@@ -286,9 +312,8 @@ object Main {
 			glClearColor(0, 0, 0, 1)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-		
 			val mwheel =
-				if (isMouseNotOverGUI)
+				if (check_user_control)
 					Mouse.getDWheel()
 				else {Mouse.getDWheel(); 0}
 				
@@ -302,7 +327,7 @@ object Main {
 			filter_step(fov, 0.1f, 0.1f, updateCameraFOV())
 
 			val (rx, ry) = //scene rotation
-				if (Mouse.isButtonDown(0) && isMouseNotOverGUI)
+				if (Mouse.isButtonDown(0) && check_user_control)
 					(-Mouse.getDX.toDouble, Mouse.getDY.toDouble)
 				else {
 					rot_angle += (Random.nextDouble() - 0.5)/10
@@ -310,7 +335,7 @@ object Main {
 					(math.cos(rot_angle) / 3, math.sin(rot_angle) / 3)
 				}
 			if (rx != 0 || ry != 0) {
-				rotation *= Quaternion.fromXY(rx / 200, ry / 200)
+				rotation *= Quaternion.fromXY(rx / 300, ry / 300)
 				modelviewMatrix = new Matrix4f
 				Matrix4f.translate(cameraOffset, modelviewMatrix, modelviewMatrix)
 				Matrix4f.scale(modelScale, modelviewMatrix, modelviewMatrix)

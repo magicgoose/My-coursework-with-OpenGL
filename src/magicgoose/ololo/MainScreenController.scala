@@ -6,6 +6,7 @@ import de.lessvoid.nifty.NiftyEventSubscriber
 import de.lessvoid.nifty.elements.events.NiftyMousePrimaryClickedEvent
 import de.lessvoid.nifty.controls.DropDownSelectionChangedEvent
 import de.lessvoid.nifty.controls.TextFieldChangedEvent
+import de.lessvoid.nifty.controls.Label
 
 object MainScreenController extends ScreenController {
 	val actions_click = scala.collection.mutable.Map.empty[String, () => Unit]
@@ -31,5 +32,10 @@ object MainScreenController extends ScreenController {
 	def onStartScreen() {
 	}
 	def onEndScreen() {		
+	}
+	
+	var closeAction = Option.empty[String => Unit]
+	def close(cmd: String) {
+		closeAction.foreach(_(cmd))
 	}
 }
