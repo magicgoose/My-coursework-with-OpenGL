@@ -47,6 +47,8 @@ import de.lessvoid.nifty.controls.NiftyControl
 import scala.util.Random
 import de.lessvoid.nifty.controls.MessageBox
 import de.lessvoid.nifty.controls.MessageBox.MessageType
+import de.lessvoid.nifty.render.NiftyImage
+import de.lessvoid.nifty.controls.Button
 
 object Main {
 	def main(args: Array[String]) {
@@ -76,8 +78,14 @@ object Main {
 			glxLoadShader("shaders/vertex.glsl", GL_VERTEX_SHADER)
 		val shVertexPerspectiveUColor =
 			glxLoadShader("shaders/vertex_uniform_color.glsl", GL_VERTEX_SHADER)
+		val shVertexPerspectiveTextured =
+			glxLoadShader("shaders/vertex_textured.glsl", GL_VERTEX_SHADER)
+
 		val shFragmentSimple =
 			glxLoadShader("shaders/fragment.glsl", GL_FRAGMENT_SHADER)
+		val shFragmentTextured =
+			glxLoadShader("shaders/fragment_textured.glsl", GL_FRAGMENT_SHADER)
+
 		val programColored =
 			glxCreateShaderProgram(
 				shVertexPerspectiveColored,
@@ -86,6 +94,10 @@ object Main {
 			glxCreateShaderProgram(
 				shVertexPerspectiveUColor,
 				shFragmentSimple)
+		val programTextured =
+			glxCreateShaderProgram(
+				shVertexPerspectiveTextured,
+				shFragmentTextured)
 
 //================================================================================
 //Setup displayed objects
@@ -94,6 +106,7 @@ object Main {
 		var current_geometry = PredefinedShapes.cube
 		var shading_type = 0
 		var dobj_current_geometry = glxLoadPolyhedron(PredefinedShapes.cube, programUColor)
+		var dobj_lamp = glxLoadSprite("assets/lamp256.png", programTextured, 0.5f)
 		var dobj_plane = Option.empty[GLDrawable]
 
 		val plane_params = Array(1f, 2f, 3f, 1f)
@@ -140,9 +153,53 @@ object Main {
 			.findNiftyControl("check_draw_plane", classOf[CheckBox])
 		val checkbox_draw_axes = main_screen
 			.findNiftyControl("check_draw_axes", classOf[CheckBox])
-		
-		val panel_plane = main_screen.findElementByName("panel_plane")
 
+		val panel_plane = main_screen.findElementByName("panel_plane")
+		val button_clip_plane = main_screen.findNiftyControl("clip_plane", classOf[Button])
+
+		//Using this var to suppress mouse handling while popup is active... It's dirty, but it works. I have no extra time to fight with nifty-gui. :/
+		var no_popups = true
+		MainScreenController.closeAction = Some(s => {
+			no_popups = true
+		})
+		def showWarning(s: String) {
+			val mb = new MessageBox(nifty, MessageType.ERROR, s, "OK")
+			no_popups = false
+			mb.show()
+		}
+
+		var clipbtnmode = 0
+		val cliptext = Array("Clip figure with plane", "Restore figure")
+		
+		def update_clip_button(mode: Int) {
+			button_clip_plane.setText(cliptext(mode))
+			clipbtnmode = mode
+		}
+		update_clip_button(clipbtnmode)
+		
+		def changeFigure(n: Int) {
+			n match {
+				case 0 => setActiveFigure(PredefinedShapes.cube, 0)
+					case 1 => setActiveFigure(PredefinedShapes.tetrahedron, 0)
+					case x => {
+						showWarning("Not implemented yet")
+					}
+			}
+			update_clip_button(0)
+		}
+		
+		val clipactions = Array(
+				() => {
+					val Array(a, b, c, d) = plane_params
+					val plane = new Plane(a, b, c, d)
+					current_geometry = current_geometry.clip(plane)
+					setActiveFigure(current_geometry, shading_type)
+					update_clip_button(1)
+				}, () => {
+					changeFigure(dropdown_geom_type.getSelectedIndex())
+				})
+		button_clip_plane.setText(cliptext(0))
+		
 		MainScreenController.actions_click.addMany(
 				("button_exit", () => nifty.exit()),
 				("check_draw_plane", () => {
@@ -152,34 +209,13 @@ object Main {
 				("check_draw_axes", () => {
 					axes_enabled = !checkbox_draw_axes.isChecked()
 				}),
-				("clip_plane", () => {
-					val Array(a, b, c, d) = plane_params
-					val plane = new Plane(a, b, c, d)
-					current_geometry = current_geometry.clip(plane)
-					setActiveFigure(current_geometry, shading_type)
-				})
+				("clip_plane", () => {clipactions(clipbtnmode)()})
 				)
 
-		//Using this var to suppress mouse handling while popup is active... It's dirty, but it works. I have no extra time to fight with nifty-gui. :/
-		var no_popups = true
-		MainScreenController.closeAction = Some(s => {
-			//println(s)
-			no_popups = true
-		})
-		def showWarning(s: String) {
-			val mb = new MessageBox(nifty, MessageType.ERROR, s, "OK")
-			no_popups = false
-			mb.show()
-		}
 
+		
 		MainScreenController.actions_selection_changed.addMany(
-				("geom_type", {
-					case 0 => setActiveFigure(PredefinedShapes.cube, 0)
-					case 1 => setActiveFigure(PredefinedShapes.tetrahedron, 0)
-					case x => {
-						showWarning("Not implemented yet")
-					}
-				}))
+				("geom_type", changeFigure))
 		
 		{
 			val plane_id = """(plane)(.*)""".r
@@ -223,6 +259,17 @@ object Main {
 			projectionMatrix.m32 = -((2 * near * far) / frustum_length)
 			projectionMatrix
 		}
+		
+		def updateMatrix(m: Matrix4f,
+				offset: Vector3f,
+				scale: Vector3f,
+				rotation: Quaternion) {
+			Matrix4f.setIdentity(m)
+			Matrix4f.translate(offset, m, m)
+			Matrix4f.scale(scale, m, m)
+			if (rotation != Quaternion.unit)
+				Matrix4f.mul(m, rotation.matrix, m)
+		}
 //================================================================================
 //Geometry transformation-related vars and vals 
 //================================================================================		
@@ -231,14 +278,15 @@ object Main {
 		val far_clip = 100.0f
 		
 		val createFiltered = Array.fill[Float](2) _
-		val fov = createFiltered(60.0f)
-		val scale = createFiltered(3.0f)
+		val fov = createFiltered(50.0f)
+		val scale = createFiltered(5.0f)
 
 		val modelScale = new Vector3f(scale(1), scale(1), scale(1))
-		val cameraOffset = new Vector3f(0, 0, -10)
+		val cameraOffset = new Vector3f(0, 0, -20)
 		
 		var projectionMatrix = createProjectionMatrix(fov(1), near_clip, far_clip)
 		var modelviewMatrix = new Matrix4f()
+		var spriteMatrix = new Matrix4f()
 
 		def updateModelScale() =
 			modelScale.set(scale(0), scale(0), scale(0))
@@ -268,10 +316,12 @@ object Main {
 //================================================================================		
 		def display_ready3d() {
 			glEnable(GL_CULL_FACE)
-			glDisable(GL_TEXTURE_2D) //without it, non-textured geometry fails to render correctly
 			glEnable(GL_LINE_SMOOTH)
 			glEnable(GL_MULTISAMPLE)
 			glEnable(GL_DEPTH_TEST)
+			//glEnable(GL_DEPTH_)
+			glEnable(GL_BLEND)
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 		}
 		
 		def display_ready2d() {
@@ -285,18 +335,34 @@ object Main {
 			glDisable(GL_LIGHTING)
 			glDisable(GL_CULL_FACE)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-			glEnable(GL_TEXTURE_2D)
+			//glEnable(GL_TEXTURE_2D)
 		}
 
 		def draw_3d() {
+			glDepthFunc(GL_ALWAYS)
+			
+			//glDisable(GL_DEPTH_TEST)
+			
+			dobj_current_geometry
+				.draw_full_inverse(projectionMatrix, modelviewMatrix)
+			glFrontFace(GL_CCW)
+			//glEnable(GL_DEPTH_TEST)
+			
 			if (axes_enabled)
 				dobj_axes
 					.draw_full(projectionMatrix, modelviewMatrix)
+			
+			dobj_lamp.draw_full(projectionMatrix, spriteMatrix)
+			
+			glDepthFunc(GL_LESS)
+			
 			dobj_current_geometry
 				.draw_full(projectionMatrix, modelviewMatrix)
+			
+			
 			if (plane_enabled)
-				dobj_plane.foreach(_
-					.draw_full(projectionMatrix, modelviewMatrix))
+			dobj_plane.foreach(_
+				.draw_full(projectionMatrix, modelviewMatrix))	
 		}
 //================================================================================
 //Main update&draw routine
@@ -309,7 +375,7 @@ object Main {
 		def updateAndDisplay() {
 			glViewport(0, 0, width, height)
 			glClearDepth(1)
-			glClearColor(0, 0, 0, 1)
+			glClearColor(0, 0.2f, 0.3f, 0)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 			val mwheel =
@@ -336,11 +402,15 @@ object Main {
 				}
 			if (rx != 0 || ry != 0) {
 				rotation *= Quaternion.fromXY(rx / 300, ry / 300)
-				modelviewMatrix = new Matrix4f
-				Matrix4f.translate(cameraOffset, modelviewMatrix, modelviewMatrix)
-				Matrix4f.scale(modelScale, modelviewMatrix, modelviewMatrix)
-				Matrix4f.mul(modelviewMatrix, rotation.matrix, modelviewMatrix)
 			}
+			updateMatrix(modelviewMatrix,
+						cameraOffset,
+						modelScale,
+						rotation)
+			updateMatrix(spriteMatrix,
+						cameraOffset,
+						modelScale,
+						Quaternion.unit)
 
 			display_ready3d()
 			draw_3d()

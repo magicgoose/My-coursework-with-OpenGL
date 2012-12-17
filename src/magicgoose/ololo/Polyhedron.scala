@@ -10,16 +10,16 @@ class Polyhedron(
 	assert((verts.length % 3) == 0 &&
 			faces.forall(_.forall(_ < (verts.length / 3))))
 			
-	def center = {//TODO: calculate real mass center inctead of average of vertices
-		verts.grouped(3).foldLeft((0f, 0f, 0f))((sum, point) => {
-			val (ax, ay, az) = sum
-			val Array(x, y, z) = point
-			(ax + x, ay + y, az + z)
-		})
-	}
+//	def center = {//TODO: calculate real mass center inctead of average of vertices
+//		verts.grouped(3).foldLeft((0f, 0f, 0f))((sum, point) => {
+//			val (ax, ay, az) = sum
+//			val Array(x, y, z) = point
+//			(ax + x, ay + y, az + z)
+//		})
+//	}
 	
 	def clip(plane: Plane) = {//I guess it's stupid, but at the moment there is no need to optimize it 8)
-		val center_side = plane.side(center)
+		val center_side = plane.side((0, 0, 0))
 		val cut_side =
 			if (center_side != 0) -center_side
 			else -1
@@ -61,7 +61,7 @@ class Polyhedron(
 			val cutting_face = extractLoop(boundary_edges)
 			val out_vertices = used_points.toSeq
 			val out_vertices_finder = used_points.iterator.zipWithIndex.map(t => (t._1, t._2.toShort)).toMap
-			val out_faces_idx = (out_faces :+ cutting_face).iterator.map(_.map(out_vertices_finder).toArray).toArray
+			val out_faces_idx = (out_faces /*:+ cutting_face*/).iterator.map(_.map(out_vertices_finder).toArray).toArray
 			new Polyhedron(
 					out_vertices.flatMap(t => Seq(t._1, t._2, t._3)).toArray,
 					out_faces_idx)

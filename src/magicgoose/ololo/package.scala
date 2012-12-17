@@ -25,11 +25,28 @@ import java.io.IOException
 import org.lwjgl.util.vector.Matrix4f
 import org.lwjgl.opengl.GL20
 import scala.annotation.tailrec
+import javax.imageio.ImageIO
+import java.io.FileInputStream
+import scala.collection.GenTraversableOnce
+import de.matthiasmann.twl.utils.PNGDecoder
+import de.matthiasmann.twl.utils.PNGDecoder.Format
+import org.lwjgl.opengl.GL11
+import org.lwjgl.util.glu.GLU
+import org.lwjgl.opengl.Display
 
 package object ololo {
 	val SIZEOF_FLOAT = java.lang.Float.SIZE / java.lang.Byte.SIZE
 //	val SIZEOF_INT = java.lang.Integer.SIZE / java.lang.Byte.SIZE
 //	val SIZEOF_VEC4 = 4 * SIZEOF_FLOAT
+	
+	def with_resource[T <: AutoCloseable, O](res: => T)(fun: T => O) = {
+		val r = res
+		try {
+			fun(r)
+		} finally {
+			r.close()
+		}
+	}
 	
 	def createBufferF(x: Array[Float]) = {//Initializes new Buffer with Array
 		val vb_data = BufferUtils.createFloatBuffer(x.length)
@@ -86,7 +103,7 @@ package object ololo {
 		val projectionMatrixLocation = glGetUniformLocation(pId, "projectionMatrix")
 		val modelviewMatrixLocation = glGetUniformLocation(pId, "modelviewMatrix")
 		
-		new GLDrawable {
+		new GLDrawable2 {
 			def pre_draw(
 					projectionMatrix: Matrix4f,
 					modelviewMatrix: Matrix4f) {
@@ -98,6 +115,7 @@ package object ololo {
 				
 				glxUploadUniform(projectionMatrix, projectionMatrixLocation)
 				glxUploadUniform(modelviewMatrix, modelviewMatrixLocation)
+				glBindBuffer(GL_ARRAY_BUFFER, verts)
 			}
 			def post_draw() {
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
@@ -105,13 +123,26 @@ package object ololo {
 				glDisableVertexAttribArray(0)
 				glBindVertexArray(0)
 				glUseProgram(0)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 			}
-			def draw() {
-				glBindBuffer(GL_ARRAY_BUFFER, verts)
+			def draw_inverse() {
+				glFrontFace(GL_CW)
 				
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-				glUniform4f(colorLocation, 0.2f, 0.6f, 0.2f, 0.6f)
+				glUniform4f(colorLocation, 0f, 0f, 0f, 1f)
 				draw_mesh()
+				
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+				glUniform4f(colorLocation, 1, 1, 1, 1)
+				draw_mesh()
+			}
+			def draw() {
+				glFrontFace(GL_CCW)
+				
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+				glUniform4f(colorLocation, 0.2f, 0.6f, 0.2f, 0.7f)
+				draw_mesh()
+				
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 				glUniform4f(colorLocation, 1, 1, 1, 1)
 				draw_mesh()
@@ -196,6 +227,102 @@ package object ololo {
 			}
 		}
 	}
+	def loadPNGtexture(fn: String, tex_unit: Int) = {
+		val (buffer, width, height) =
+			with_resource(new FileInputStream(fn))(istream => {
+				val decoder = new PNGDecoder(istream)
+				assert(decoder.hasAlphaChannel())
+				val (w, h) = (decoder.getWidth(), decoder.getHeight())
+				val buf = ByteBuffer.allocateDirect(
+						4 * decoder.getWidth() * decoder.getHeight())
+				decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA)
+				buf.flip()
+				(buf, w, h)
+			})
+		// Create a new texture object in memory and bind it
+		val texId = glGenTextures()
+		glActiveTexture(tex_unit)
+		glBindTexture(GL_TEXTURE_2D, texId)
+		// All RGB bytes are aligned to each other and each component is 1 byte
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+		// Upload the texture data and generate mip maps (for scaling)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, 
+				GL_RGBA, GL_UNSIGNED_BYTE, buffer)
+		glGenerateMipmap(GL_TEXTURE_2D)
+		// Setup the ST coordinate system
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+		// Setup what to do when the texture has to be scaled
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
+				GL_NEAREST)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+				GL_LINEAR_MIPMAP_LINEAR)
+		texId
+	}
+	def glxLoadSprite(fn: String, pId: Int, l: Float) = {
+		val verts = glxLoadArray(Array[Float](
+			-l, -l, 0, 1, 0, 1,
+			 l, -l, 0, 1, 1, 1,
+			 l,  l, 0, 1, 1, 0,
+			 -l, l, 0, 1, 0, 0))
+		val vdata_length = 6 * SIZEOF_FLOAT
+		val vdata_tex_offset = 4 * SIZEOF_FLOAT
+		
+		val VAOid = glGenVertexArrays()
+		glBindVertexArray(VAOid)
+
+		glVertexAttribPointer(0, 4, GL_FLOAT, false, vdata_length, 0)
+		glVertexAttribPointer(1, 4, GL_FLOAT, false, vdata_length, vdata_tex_offset)
+		glBindBuffer(GL_ARRAY_BUFFER, 0)
+		glBindVertexArray(0)
+		
+		val projectionMatrixLocation = glGetUniformLocation(pId, "projectionMatrix")
+		val modelviewMatrixLocation = glGetUniformLocation(pId, "modelviewMatrix")
+		
+		val texId = loadPNGtexture(fn, GL_TEXTURE0)
+		
+		exitOnGLError("creating sprite")
+		
+		new GLDrawable {
+			def pre_draw(
+					projectionMatrix: Matrix4f,
+					modelviewMatrix: Matrix4f) {
+				glUseProgram(pId)
+				glBindVertexArray(VAOid)
+				glEnableVertexAttribArray(0)
+				glEnableVertexAttribArray(1)
+				glBindAttribLocation(pId, 0, "in_Position")
+				glBindAttribLocation(pId, 1, "in_Texture")
+
+				glBindBuffer(GL_ARRAY_BUFFER, verts)
+
+				glxUploadUniform(projectionMatrix, projectionMatrixLocation)
+				glxUploadUniform(modelviewMatrix, modelviewMatrixLocation)
+				
+				glActiveTexture(GL_TEXTURE0)
+				glBindTexture(GL_TEXTURE_2D, texId)
+			}
+			def draw() {
+				glDrawArrays(GL_TRIANGLE_FAN, 0, 4)
+			}
+			def post_draw() {
+				glBindBuffer(GL_ARRAY_BUFFER, 0)
+				glDisableVertexAttribArray(1)
+				glDisableVertexAttribArray(0)
+				glBindVertexArray(0)
+				glUseProgram(0)
+			}
+			override def finalize() {
+				glDeleteTextures(texId)
+
+				glBindBuffer(GL_ARRAY_BUFFER, 0)
+				glDeleteBuffers(verts)
+
+				glBindVertexArray(0)
+				glDeleteVertexArrays(VAOid)
+			}
+		}
+	}
 	
 	def spin_max(a: Float, b: Float, c: Float, spins: Int = 0): (Float, Float, Float, Int) = {
 		if (a >= b && a >= c)
@@ -248,13 +375,13 @@ package object ololo {
 				glxUploadUniform(projectionMatrix, projectionMatrixLocation)
 				glxUploadUniform(modelviewMatrix, modelviewMatrixLocation)
 				glDisable(GL_CULL_FACE)
+				glEnable(GL_DEPTH_TEST)
 			}
 			def post_draw() {
 				glBindBuffer(GL_ARRAY_BUFFER, 0)
 				glDisableVertexAttribArray(0)
 				glBindVertexArray(0)
 				glUseProgram(0)
-				glEnable(GL_CULL_FACE)
 			}
 			def draw() {
 				glBindBuffer(GL_ARRAY_BUFFER, verts)
@@ -388,4 +515,13 @@ package object ololo {
 	//		val values = fields.map(_.get(obj))
 	//		(fields.map(_.getName())) zip values
 	//	}
+	def exitOnGLError(errorMessage: String) {
+		val errorValue = GL11.glGetError()
+		if (errorValue != GL11.GL_NO_ERROR) {
+			val errorString = GLU.gluErrorString(errorValue)
+			System.err.println("ERROR - " + errorMessage + ": " + errorString)	
+			if (Display.isCreated()) Display.destroy()
+			System.exit(-1)
+		}
+	}
 }

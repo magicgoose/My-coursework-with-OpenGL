@@ -18,11 +18,12 @@ object PredefinedShapes {
 			Array(7, 0, 3, 4),
 			Array(6, 1, 0, 7),
 			Array(4, 3, 2, 5)))
+
 	val tetrahedron = new Polyhedron(Array[Float](
-		0, 0, sqrt(2).toFloat,
-		0, 1, 0,
-		(-sqrt(3)/2).toFloat, -0.5f, 0,
-		(sqrt(3)/2).toFloat, -0.5f, 0),
+		0, 0, 2,
+		0, 2, 2 - 2*sqrt(2).toFloat,
+		(-sqrt(3)).toFloat, -1f, 2 - 2*sqrt(2).toFloat,
+		(sqrt(3)).toFloat, -1f, 2 - 2*sqrt(2).toFloat),
 		Array(
 			Array(1, 3, 2),
 			Array(0, 2, 3),

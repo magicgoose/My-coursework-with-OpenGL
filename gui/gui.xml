@@ -71,7 +71,6 @@ Roll mouse wheel while pressing CTRL to scale scene."
 				<control name="button" id="button_exit" label="Exit this awesome program" width="*" />
 			</panel>
 		</layer>
-	
 	</screen>
 
 </nifty>
