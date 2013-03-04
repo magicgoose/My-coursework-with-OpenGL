@@ -1,6 +1,6 @@
 My coursework with OpenGL
 ========================
-This is realisation of polyhedron splitting with OpenGL visualisation.
+This is implementation of polyhedron splitting with OpenGL visualisation.
 Uses Nifty-GUI for user interaction.
 
 To compile and run, the following libs are required:
