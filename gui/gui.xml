@@ -13,61 +13,59 @@
 	<screen id="main" controller="magicgoose.ololo.MainScreenController$">
 		<layer id="settings" childLayout="vertical" align="right" backgroundColor="#0000">
 			<panel id="settings_panel" childLayout="vertical" align="right" valign="top" style="nifty-panel" padding="20px" width="25%"
-			    visibleToMouse="true"
-			    childClip="true">
+				visibleToMouse="true" childClip="true">
 				<panel id="s0" childLayout="horizontal">
-					<text style="nifty-label" id="l0" textHAlign="right" width="50%"
-					    text="Geometry type:" />
+					<text style="nifty-label" id="l0" textHAlign="right" width="50%" text="Geometry type:" />
 					<control name="dropDown" id="geom_type" textHAlign="right" visibleToMouse="true" />
+				</panel>
+				<panel id="panel_ellipsoid" childLayout="vertical">
+					<text style="nifty-label" textHAlign="left" width="100%" wrap='true'
+						text="Ellipsoid equation is \#0f0f#x^2/A^2 + y^2/B^2 + z^2/C^2 = 1\#ffff#" />
+					<panel childLayout="horizontal">
+						<text style="nifty-label" textHAlign="left" text="A = " />
+						<control name="textfield" id="ellipsoidA" width="15%" text="1" />
+
+						<text style="nifty-label" textHAlign="left" text="B = " />
+						<control name="textfield" id="ellipsoidB" width="15%" text="1" />
+
+						<text style="nifty-label" textHAlign="left" text="C = " />
+						<control name="textfield" id="ellipsoidC" width="15%" text="1" />
+					</panel>
 				</panel>
 				<panel childLayout="horizontal" width="*">
 					<control name="checkbox" id="check_draw_axes" checked="true" />
-				    <text style="nifty-label" textHAlign="left" width="50%"
-				        text="Draw \#f00f#X\#0f0f#Y\#00ff#Z\#ffff# unit vectors" />
-			    </panel>
+					<text style="nifty-label" textHAlign="left" width="50%" text="Draw \#f00f#X\#0f0f#Y\#00ff#Z\#ffff# unit vectors" />
+				</panel>
 				<panel childLayout="horizontal" width="*">
 					<control name="checkbox" id="check_draw_plane" checked="true" />
-				    <text style="nifty-label" textHAlign="left" width="50%"
-				        text="Draw plane" />
-			    </panel>
-			    <panel id="panel_plane" childLayout="vertical">
-			        <text style="nifty-label" textHAlign="left" width="100%" wrap='true'
-			            text="Plane equation is \#0f0f#Ax + By + Cz + D = 0\#ffff#" />
-			        <panel childLayout="horizontal">
-			            <text style="nifty-label" textHAlign="left"
-			                text="A = "/>
-			            <control name="textfield" id="planeA" width="15%"
-			                text="1"/>
+					<text style="nifty-label" textHAlign="left" width="50%" text="Draw plane" />
+				</panel>
+				<panel childLayout="horizontal">
+					<control name="checkbox" id="lamp" checked="true" />
+					<text style="nifty-label" textHAlign="left" text="Draw lamp and light rays" />
+				</panel>
+				<panel id="panel_plane" childLayout="vertical">
+					<text style="nifty-label" textHAlign="left" width="100%" wrap='true' text="Plane equation is \#0f0f#Ax + By + Cz + D = 0\#ffff#" />
+					<panel childLayout="horizontal">
+						<text style="nifty-label" textHAlign="left" text="A = " />
+						<control name="textfield" id="planeA" width="15%" text="1" />
 
-			            <text style="nifty-label" textHAlign="left"
-			                text="B = "/>
-			            <control name="textfield" id="planeB" width="15%"
-			                text="2"/>
+						<text style="nifty-label" textHAlign="left" text="B = " />
+						<control name="textfield" id="planeB" width="15%" text="2" />
 
-			            <text style="nifty-label" textHAlign="left"
-			                text="C = "/>
-			            <control name="textfield" id="planeC" width="15%"
-			                text="3"/>
+						<text style="nifty-label" textHAlign="left" text="C = " />
+						<control name="textfield" id="planeC" width="15%" text="3" />
 
-			            <text style="nifty-label" textHAlign="left"
-			                text="D = "/>
-			            <control name="textfield" id="planeD" width="15%"
-			                text="1"/>
-			        </panel>
-			        <control name="button" id="clip_plane" label="Clip figure with plane" width="*" />
-			        <panel childLayout="horizontal">
-			            <control name="checkbox" id="clip_plane_mode" checked="false"/>
-			            <text style="nifty-label" textHAlign="left"
-			                text="Open hole" />	            
-			        </panel>
-			        
-			    </panel>			
+						<text style="nifty-label" textHAlign="left" text="D = " />
+						<control name="textfield" id="planeD" width="15%" text="2" />
+					</panel>
+					<control name="button" id="clip_plane" label="Clip figure with plane" width="*" />
+
+				</panel>
 				<text style="nifty-label" textHAlign="left" valign="top" wrap='true' width="80%"
-				    text=
-"Click LMB and drag to rotate scene.
+					text="Click LMB and drag to rotate scene.
 Roll mouse wheel to change camera zoom.
-Roll mouse wheel while pressing CTRL to scale scene."
-				    />
+Roll mouse wheel while pressing CTRL to scale scene." />
 				<control name="button" id="button_exit" label="Exit this awesome program" width="*" />
 			</panel>
 		</layer>
